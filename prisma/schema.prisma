@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique
+  phone     String?
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  memberships   Membership[]
+  notifications Notification[]
+  payments      Payment[]
+
+  @@map("users")
+}
+
+model MembershipPlan {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  price          Decimal  @db.Decimal(10, 2)
+  durationMonths Int      @map("duration_months")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  memberships Membership[]
+
+  @@map("membership_plans")
+}
+
+model Membership {
+  id              String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String                  @map("user_id") @db.Uuid
+  planId          String                  @map("plan_id") @db.Uuid
+  startDate       DateTime                @map("start_date") @db.Date
+  endDate         DateTime                @map("end_date") @db.Date
+  status          MembershipStatus        @default(ACTIVE)
+  paymentStatus   MembershipPaymentStatus @default(PENDING) @map("payment_status")
+  lastPaymentDate DateTime?               @map("last_payment_date") @db.Date
+  nextPaymentDue  DateTime?               @map("next_payment_due") @db.Date
+  notes           String?
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+
+  // Relations
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     MembershipPlan  @relation(fields: [planId], references: [id])
+  payments Payment[]
+
+  @@map("memberships")
+}
+
+model Payment {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  membershipId  String   @map("membership_id") @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  amount        Decimal  @db.Decimal(10, 2)
+  paymentDate   DateTime @default(now()) @map("payment_date") @db.Date
+  paymentMethod String   @default("cash") @map("payment_method")
+  monthsPaid    Int      @default(1) @map("months_paid")
+  notes         String?
+  processedBy   String?  @map("processed_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Notification {
+  id           String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String           @map("user_id") @db.Uuid
+  title        String
+  message      String
+  type         NotificationType
+  isSent       Boolean          @default(false) @map("is_sent")
+  scheduledFor DateTime         @map("scheduled_for")
+  sentAt       DateTime?        @map("sent_at")
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+
+  @@map("membership_status")
+}
+
+enum MembershipPaymentStatus {
+  PAID
+  PENDING
+  OVERDUE
+  PARTIAL
+
+  @@map("membership_payment_status")
+}
+
+enum NotificationType {
+  MEMBERSHIP_EXPIRING
+  MEMBERSHIP_EXPIRED
+  PAYMENT_REMINDER
+
+  @@map("notification_type")
+}
