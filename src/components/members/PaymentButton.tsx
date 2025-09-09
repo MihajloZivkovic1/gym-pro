@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { CreditCard } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
 import { PaymentModal } from './PaymentModal';
 
 interface PaymentButtonProps {

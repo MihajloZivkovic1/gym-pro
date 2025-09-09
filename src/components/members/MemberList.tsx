@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Edit, Trash2, Eye, CreditCard } from 'lucide-react';
+import { Edit, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { formatDate } from '@/lib/utils';
 import { PaymentButton } from './PaymentButton';

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { calculateMembershipStatus, formatDate, formatCurrency } from '@/lib/utils';
+import { calculateMembershipStatus } from '@/lib/utils';
 import { MemberProfileHeader } from '@/components/members/MemberProfileHeader';
 import { MembershipStatus } from '@/components/members/MembershipStatus';
 import { MembershipHistory } from '@/components/members/MembershipHistory';
@@ -135,11 +135,12 @@ async function getMemberData(id: string) {
 }
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default async function MemberProfilePage({ params }: PageProps) {
-  const data = await getMemberData(params.id);
+  const { id } = await params;
+  const data = await getMemberData(id);
 
   if (!data) {
     notFound();
@@ -171,7 +172,8 @@ export default async function MemberProfilePage({ params }: PageProps) {
 
 // Generate metadata for the page
 export async function generateMetadata({ params }: PageProps) {
-  const data = await getMemberData(params.id);
+  const { id } = await params;
+  const data = await getMemberData(id);
 
   if (!data) {
     return {

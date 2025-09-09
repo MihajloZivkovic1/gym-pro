@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { formatDate, formatCurrency } from '@/lib/utils';
-import { Calendar, CreditCard } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 
 interface MembershipHistoryProps {
   memberships: Array<{

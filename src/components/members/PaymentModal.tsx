@@ -69,14 +69,6 @@ export function PaymentModal({ member, onClose, onSuccess }: PaymentModalProps) 
     }
   };
 
-  const getModalTitle = () => {
-    if (isExpiredMembership()) {
-      return '🔄 Reaktiviraj članarinu';
-    }
-    return '💳 Naplati članarinu';
-  };
-
-
   // Update amount when months change
   useEffect(() => {
     if (member.activeMembership) {

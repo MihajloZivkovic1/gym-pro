@@ -12,11 +12,13 @@ const membershipPlanSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     const plan = await prisma.membershipPlan.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: { memberships: true }
@@ -50,19 +52,19 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const validatedData = membershipPlanSchema.parse(body);
 
     const updatedPlan = await prisma.membershipPlan.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name: validatedData.name,
         price: validatedData.price,
         durationMonths: validatedData.durationMonths,
-
         isActive: validatedData.isActive
       }
     });
@@ -90,13 +92,15 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     // Check if plan has active memberships
     const activeMemberships = await prisma.membership.count({
       where: {
-        planId: params.id,
+        planId: id,
         status: 'ACTIVE'
       }
     });
@@ -110,7 +114,7 @@ export async function DELETE(
 
     // Soft delete - mark as inactive instead of deleting
     await prisma.membershipPlan.update({
-      where: { id: params.id },
+      where: { id },
       data: { isActive: false }
     });
 

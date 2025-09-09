@@ -17,7 +17,7 @@ export async function GET() {
     });
 
     // Calculate stats
-    let totalMembers = members.length;
+    const totalMembers = members.length;
     let activeMembers = 0;
     let expiringMembers = 0;
     let expiredMembers = 0;

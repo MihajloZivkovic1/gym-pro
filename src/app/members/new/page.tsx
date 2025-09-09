@@ -64,7 +64,7 @@ export default function AddMemberPage() {
         alert(result.error || 'Greška pri dodavanju člana');
       }
     } catch (error) {
-      alert('Greška pri komunikaciji sa serverom');
+      console.log('Greška pri komunikaciji sa serverom', error);
     } finally {
       setLoading(false);
     }
