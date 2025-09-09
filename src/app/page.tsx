@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/Button';
 import { Plus, Mail, FileDown } from 'lucide-react';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 async function getDashboardData() {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/dashboard`, {
