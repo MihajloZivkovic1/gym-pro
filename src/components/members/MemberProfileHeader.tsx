@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Edit, Mail, CreditCard, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { PaymentModal } from '@/components/members/PaymentModal';
+
 import { formatDate } from '@/lib/utils';
+import { DeleteModal } from './DeleteModal';
 
 interface MemberProfileHeaderProps {
   member: {
@@ -28,7 +31,10 @@ interface MemberProfileHeaderProps {
 }
 
 export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
+  const router = useRouter();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const getStatusBadge = (status: string) => {
     const styles = {
@@ -65,6 +71,43 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
       }
     } catch (error) {
       alert('Greška pri komunikaciji sa serverom');
+    }
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+
+    try {
+      const response = await fetch(`/api/members/${member.id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          router.push('/members');
+        } else {
+          alert(result.error || 'Greška pri brisanju člana');
+        }
+      } else {
+        alert('Greška pri brisanju člana');
+      }
+    } catch (error) {
+      console.error('Error deleting member:', error);
+      alert('Greška pri komunikaciji sa serverom');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    if (!isDeleting) {
+      setShowDeleteModal(false);
     }
   };
 
@@ -170,12 +213,8 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
               <Button
                 variant="danger"
                 className="w-full flex items-center gap-2"
-                onClick={() => {
-                  if (confirm(`Da li ste sigurni da želite da obrišete ${member.firstName} ${member.lastName}?`)) {
-                    // Handle delete
-                    window.location.href = '/members';
-                  }
-                }}
+                onClick={handleDeleteClick}
+                disabled={isDeleting}
               >
                 <Trash2 className="w-4 h-4" />
                 Obriši člana
@@ -185,6 +224,7 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
         </CardContent>
       </Card>
 
+      {/* Payment Modal */}
       {showPaymentModal && (
         <PaymentModal
           member={member}
@@ -195,6 +235,19 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
           }}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteModal
+        isOpen={showDeleteModal}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        itemName={`${member.firstName} ${member.lastName}`}
+        itemType="člana"
+        title="Obriši člana"
+        description="Da li ste sigurni da želite da obrišete člana:"
+        warningMessage="Ova akcija će trajno obrisati člana i sve povezane podatke (članstva, plaćanja, notifikacije, statistike). Ova akcija se ne može poništiti."
+        isDeleting={isDeleting}
+      />
     </>
   );
 }

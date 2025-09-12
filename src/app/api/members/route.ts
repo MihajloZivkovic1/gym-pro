@@ -67,64 +67,129 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      membershipStart,
+      planId,
+      payment
+    } = body;
 
-    // Validate input
-    const validatedData = memberSchema.parse(body);
+    // Validate required fields
+    if (!firstName || !lastName || !email || !planId || !membershipStart) {
+      return NextResponse.json(
+        { error: 'Sva obavezna polja moraju biti popunjena' },
+        { status: 400 }
+      );
+    }
 
-    // Create user and membership in transaction
+    // Validate payment data
+    if (!payment || !payment.amount || !payment.paymentMethod || !payment.monthsPaid) {
+      return NextResponse.json(
+        { error: 'Podaci o plaćanju su obavezni' },
+        { status: 400 }
+      );
+    }
+
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'Korisnik sa ovim email-om već postoji' },
+        { status: 400 }
+      );
+    }
+
+    // Get the membership plan to calculate end date
+    const membershipPlan = await prisma.membershipPlan.findUnique({
+      where: { id: planId }
+    });
+
+    if (!membershipPlan) {
+      return NextResponse.json(
+        { error: 'Plan članarine nije pronađen' },
+        { status: 404 }
+      );
+    }
+
+    // Calculate membership end date based on months paid
+    const startDate = new Date(membershipStart);
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + payment.monthsPaid);
+
+    // Calculate next payment due date (after the paid period)
+    const nextPaymentDue = new Date(endDate);
+    nextPaymentDue.setDate(nextPaymentDue.getDate() + 1);
+
+    // Use transaction to create user, membership, and payment atomically
     const result = await prisma.$transaction(async (tx) => {
-      const user = await tx.user.create({
+      // 1. Create the user
+      const newUser = await tx.user.create({
         data: {
-          email: validatedData.email,
-          phone: validatedData.phone,
-          firstName: validatedData.firstName,
-          lastName: validatedData.lastName
+          firstName,
+          lastName,
+          email,
+          phone: phone || null
         }
       });
 
-      const startDate = new Date(validatedData.membershipStart);
-      const endDate = new Date(startDate);
-      endDate.setMonth(endDate.getMonth() + validatedData.membershipDuration);
-
-      const membership = await tx.membership.create({
+      // 2. Create the membership
+      const newMembership = await tx.membership.create({
         data: {
-          userId: user.id,
-          planId: validatedData.planId,
-          startDate,
-          endDate,
+          userId: newUser.id,
+          planId,
+          startDate: startDate,
+          endDate: endDate,
           status: 'ACTIVE',
-          paymentStatus: 'PENDING'
+          paymentStatus: 'PAID',
+          lastPaymentDate: new Date(payment.paymentDate || membershipStart),
+          nextPaymentDue: nextPaymentDue
         }
       });
 
-      // Create notification for expiry (3 days before)
-      const notificationDate = new Date(endDate);
-      notificationDate.setDate(notificationDate.getDate() - 3);
-
-      await tx.notification.create({
+      // 3. Create the payment record
+      const newPayment = await tx.payment.create({
         data: {
-          userId: user.id,
-          title: 'Članarina uskoro ističe',
-          message: `Poštovani ${user.firstName}, vaša članarina ističe ${endDate.toLocaleDateString('sr-RS')}.`,
-          type: 'MEMBERSHIP_EXPIRING',
-          scheduledFor: notificationDate
+          membershipId: newMembership.id,
+          userId: newUser.id,
+          amount: payment.amount,
+          paymentDate: new Date(payment.paymentDate || membershipStart),
+          paymentMethod: payment.paymentMethod,
+          monthsPaid: payment.monthsPaid,
+          notes: payment.notes || null,
+          processedBy: 'system' // You can change this to actual user ID if you have auth
         }
       });
 
-      return { user, membership };
+      return {
+        user: newUser,
+        membership: newMembership,
+        payment: newPayment
+      };
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Član je uspešno dodat',
-      data: result
+      message: 'Član je uspešno kreiran sa prvim plaćanjem',
+      data: {
+        user: result.user,
+        membership: result.membership,
+        payment: result.payment
+      }
     });
+
   } catch (error: any) {
     console.error('Create member error:', error);
 
+    // Handle unique constraint errors (email already exists)
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'Korisnik sa ovom email adresom već postoji' },
+        { error: 'Korisnik sa ovim email-om već postoji' },
         { status: 400 }
       );
     }

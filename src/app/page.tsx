@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Plus, Mail, FileDown } from 'lucide-react';
 import Link from 'next/link';
+import { ExportButton } from '@/components/statistics/ExportButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,10 +54,7 @@ export default async function Dashboard() {
               <Mail className="w-5 h-5" />
               Pošalji podsetke
             </Button>
-            <Button variant="secondary" className="w-full h-12 flex items-center gap-2">
-              <FileDown className="w-5 h-5" />
-              Izvezi listu
-            </Button>
+            <ExportButton className="w-full h-12 flex items-center gap-2" />
           </div>
         </CardContent>
       </Card>
