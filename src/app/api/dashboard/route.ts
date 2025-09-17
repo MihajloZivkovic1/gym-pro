@@ -49,33 +49,133 @@ export async function GET() {
       expiredMembers
     };
 
-    // Recent activity (mock data for now)
-    const activities = [
-      {
-        id: '1',
-        type: 'payment',
-        memberName: 'Ana Jovanović',
-        description: 'Platila mesečnu članarinu - 5000 RSD',
-        time: 'Pre 2h'
-      },
-      {
-        id: '2',
-        type: 'new_member',
-        memberName: 'Marko Petrović',
-        description: 'Novi član - Premium pakет',
-        time: 'Pre 5h'
-      }
-    ];
+    // Fetch real recent activities
+    interface ActivityItem {
+      id: string;
+      type: 'payment' | 'new_member' | 'expiring';
+      memberName: string;
+      description: string;
+      time: string;
+    }
 
-    // Expiring memberships
-    const threeDaysFromNow = new Date();
-    threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
+    const activities: ActivityItem[] = [];
+
+    // Get recent payments (last 7 days)
+    const recentPayments = await prisma.payment.findMany({
+      where: {
+        createdAt: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+        }
+      },
+      include: {
+        membership: {
+          include: {
+            user: true,
+            plan: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 2
+    });
+
+    // Add payment activities
+    recentPayments.forEach(payment => {
+      const timeAgo = getTimeAgo(payment.createdAt);
+      activities.push({
+        id: `payment-${payment.id}`,
+        type: 'payment',
+        memberName: `${payment.membership.user.firstName} ${payment.membership.user.lastName}`,
+        description: `Platila ${payment.membership.plan.name} - ${payment.amount.toLocaleString()} RSD`,
+        time: timeAgo
+      });
+    });
+
+    // Get recently created members (last 7 days)
+    const newMembers = await prisma.user.findMany({
+      where: {
+        createdAt: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+        }
+      },
+      include: {
+        memberships: {
+          where: { status: 'ACTIVE' },
+          include: { plan: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    });
+
+    // Add new member activities
+    newMembers.forEach(member => {
+      const timeAgo = getTimeAgo(member.createdAt);
+      const planName = member.memberships[0]?.plan.name || 'Osnovni paket';
+      activities.push({
+        id: `member-${member.id}`,
+        type: 'new_member',
+        memberName: `${member.firstName} ${member.lastName}`,
+        description: `Novi član - ${planName}`,
+        time: timeAgo
+      });
+    });
+
+    // Get members with memberships expiring soon (next 7 days)
+    const startDate = new Date();
+    const endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const expiringMembershipsList = await prisma.membership.findMany({
+      where: {
+        status: 'ACTIVE',
+        endDate: {
+          gte: startDate,
+          lte: endDate
+        }
+      },
+      include: {
+        user: true,
+        plan: true
+      },
+      orderBy: { endDate: 'asc' },
+      take: 3
+    });
+
+    // Add expiring membership activities
+    expiringMembershipsList.forEach(membership => {
+      const daysUntilExpiry = Math.ceil((membership.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      activities.push({
+        id: `expiring-${membership.id}`,
+        type: 'expiring',
+        memberName: `${membership.user.firstName} ${membership.user.lastName}`,
+        description: `Članarina ističe za ${daysUntilExpiry} ${daysUntilExpiry === 1 ? 'dan' : 'dana'}`,
+        time: `Za ${daysUntilExpiry} ${daysUntilExpiry === 1 ? 'dan' : 'dana'}`
+      });
+    });
+
+    // Sort activities by most recent first (for mixed activity types)
+    // Since we have different time formats, we'll keep them in the order we added them
+    // but limit to the most recent 10 activities
+    const sortedActivities = activities
+      .sort((a, b) => {
+        // Simple priority: payments first, then new members, then expiring
+        const priority = { 'payment': 0, 'new_member': 1, 'expiring': 2 };
+        return priority[a.type as keyof typeof priority] - priority[b.type as keyof typeof priority];
+      })
+      .slice(0, 10);
+
+    // Expiring memberships (next 30 days instead of 3 days for more visibility)
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
     const expiringMemberships = await prisma.membership.findMany({
       where: {
         status: 'ACTIVE',
         endDate: {
-          lte: threeDaysFromNow
+          lte: thirtyDaysFromNow,
+          gte: new Date() // Only future expirations
         }
       },
       include: {
@@ -88,7 +188,7 @@ export async function GET() {
 
     return NextResponse.json({
       stats,
-      activities,
+      activities: sortedActivities,
       expiringMemberships
     });
   } catch (error) {
@@ -97,5 +197,26 @@ export async function GET() {
       { error: 'Failed to fetch dashboard data' },
       { status: 500 }
     );
+  }
+}
+
+// Helper function to calculate time ago
+function getTimeAgo(date: Date): string {
+  const now = new Date();
+  const diffInMilliseconds = now.getTime() - date.getTime();
+  const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60));
+  const diffInHours = Math.floor(diffInMilliseconds / (1000 * 60 * 60));
+  const diffInDays = Math.floor(diffInMilliseconds / (1000 * 60 * 60 * 24));
+
+  if (diffInMinutes < 1) {
+    return 'Upravo sada';
+  } else if (diffInMinutes < 60) {
+    return `Pre ${diffInMinutes} ${diffInMinutes === 1 ? 'minut' : 'minuta'}`;
+  } else if (diffInHours < 24) {
+    return `Pre ${diffInHours}${diffInHours === 1 ? 'h' : 'h'}`;
+  } else if (diffInDays < 7) {
+    return `Pre ${diffInDays} ${diffInDays === 1 ? 'dan' : 'dana'}`;
+  } else {
+    return date.toLocaleDateString('sr-RS');
   }
 }
