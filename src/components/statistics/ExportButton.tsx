@@ -333,17 +333,16 @@ export function ExportButton({ className = "w-full h-12 flex items-center gap-2"
     <button
       onClick={exportToExcel}
       disabled={isExporting}
-      className={`${className} bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors justify-center`}
+      className={`${className} justify-center`}
     >
       {isExporting ? (
         <>
           <Loader2 className="w-5 h-5 animate-spin" />
-          Izvoz u toku...
+          Download u toku...
         </>
       ) : (
         <>
-          <FileDown className="w-5 h-5" />
-          Izvezi listu
+          Skini statistiku
         </>
       )}
     </button>
