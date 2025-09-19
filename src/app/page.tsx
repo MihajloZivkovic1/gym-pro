@@ -82,19 +82,20 @@ export default async function Dashboard() {
                 </div>
               </div>
             </Link>
-
-            <button className="group">
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105">
-                <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-all duration-300"></div>
-                <div className="relative z-10 flex items-center gap-3">
-                  <Mail className="w-6 h-6" />
-                  <div>
-                    <p className="font-semibold">Podsetnici</p>
-                    <p className="text-emerald-100 text-sm">Pošalji obavestenja</p>
+            <Link href="/newsletters" className="group">
+              <div className="group">
+                <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105">
+                  <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-all duration-300"></div>
+                  <div className="relative z-10 flex items-center gap-3">
+                    <Mail className="w-6 h-6" />
+                    <div>
+                      <p className="font-semibold">Podsetnici</p>
+                      <p className="text-emerald-100 text-sm">Pošalji obavestenja</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </button>
+            </Link>
 
             <div className="group">
               <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105">

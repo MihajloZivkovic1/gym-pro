@@ -1,24 +1,72 @@
-// prisma/seed.ts
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  console.log('🌱 Starting seed...');
+// Helper function to generate random date within range
+const randomDateBetween = (start: Date, end: Date): Date => {
+  const startTime = start.getTime();
+  const endTime = end.getTime();
+  const randomTime = startTime + Math.random() * (endTime - startTime);
+  return new Date(randomTime);
+};
 
-  // Clear existing data (optional - comment out if you want to keep existing data)
+// Helper function to add months to date
+const addMonths = (date: Date, months: number): Date => {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
+  return result;
+};
+
+const firstNames = [
+  'James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael', 'Linda',
+  'William', 'Elizabeth', 'David', 'Barbara', 'Richard', 'Susan', 'Joseph', 'Jessica',
+  'Thomas', 'Sarah', 'Christopher', 'Karen', 'Charles', 'Nancy', 'Daniel', 'Lisa',
+  'Matthew', 'Betty', 'Anthony', 'Helen', 'Mark', 'Sandra', 'Donald', 'Donna',
+  'Steven', 'Carol', 'Paul', 'Ruth', 'Joshua', 'Sharon', 'Kenneth', 'Michelle',
+  'Kevin', 'Laura', 'Brian', 'Sarah', 'George', 'Kimberly', 'Edward', 'Deborah',
+  'Ronald', 'Dorothy', 'Timothy', 'Lisa', 'Jason', 'Nancy', 'Jeffrey', 'Karen',
+  'Ryan', 'Betty', 'Jacob', 'Helen', 'Gary', 'Sandra', 'Nicholas', 'Donna',
+  'Eric', 'Carol', 'Jonathan', 'Ruth', 'Stephen', 'Sharon', 'Larry', 'Michelle',
+  'Justin', 'Laura', 'Scott', 'Sarah', 'Brandon', 'Kimberly', 'Benjamin', 'Deborah',
+  'Samuel', 'Dorothy', 'Gregory', 'Amy', 'Alexander', 'Angela', 'Patrick', 'Ashley',
+  'Frank', 'Brenda', 'Raymond', 'Emma', 'Jack', 'Olivia', 'Dennis', 'Cynthia',
+  'Jerry', 'Marie', 'Tyler', 'Janet', 'Aaron', 'Catherine', 'Jose', 'Frances'
+];
+
+const lastNames = [
+  'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis',
+  'Rodriguez', 'Martinez', 'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas',
+  'Taylor', 'Moore', 'Jackson', 'Martin', 'Lee', 'Perez', 'Thompson', 'White',
+  'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson', 'Walker', 'Young',
+  'Allen', 'King', 'Wright', 'Scott', 'Torres', 'Nguyen', 'Hill', 'Flores',
+  'Green', 'Adams', 'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell',
+  'Carter', 'Roberts', 'Gomez', 'Phillips', 'Evans', 'Turner', 'Diaz', 'Parker'
+];
+
+const generatePhoneNumber = (): string => {
+  const area = Math.floor(Math.random() * 900) + 100;
+  const exchange = Math.floor(Math.random() * 900) + 100;
+  const number = Math.floor(Math.random() * 9000) + 1000;
+  return `+1${area}${exchange}${number}`;
+};
+
+async function main() {
+  console.log('🏋️ Starting gym database seeding...');
+
+  // Clean existing data
   await prisma.notification.deleteMany();
+  await prisma.newsletter.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.membership.deleteMany();
   await prisma.membershipPlan.deleteMany();
   await prisma.user.deleteMany();
 
-  // Create Membership Plans
+  // Create membership plans
   console.log('📋 Creating membership plans...');
   const membershipPlans = await Promise.all([
     prisma.membershipPlan.create({
       data: {
-        name: 'Basic Monthly',
+        name: 'Monthly Basic',
         price: 29.99,
         durationMonths: 1,
         isActive: true,
@@ -26,15 +74,15 @@ async function main() {
     }),
     prisma.membershipPlan.create({
       data: {
-        name: 'Premium Monthly',
-        price: 49.99,
-        durationMonths: 1,
+        name: 'Quarterly Premium',
+        price: 79.99,
+        durationMonths: 3,
         isActive: true,
       },
     }),
     prisma.membershipPlan.create({
       data: {
-        name: 'Basic Annual',
+        name: 'Annual VIP',
         price: 299.99,
         durationMonths: 12,
         isActive: true,
@@ -42,15 +90,7 @@ async function main() {
     }),
     prisma.membershipPlan.create({
       data: {
-        name: 'Premium Annual',
-        price: 499.99,
-        durationMonths: 12,
-        isActive: true,
-      },
-    }),
-    prisma.membershipPlan.create({
-      data: {
-        name: 'Student Plan',
+        name: 'Student Monthly',
         price: 19.99,
         durationMonths: 1,
         isActive: true,
@@ -60,261 +100,212 @@ async function main() {
 
   console.log(`✅ Created ${membershipPlans.length} membership plans`);
 
-  // Create Users
-  console.log('👥 Creating users...');
-  const users = await Promise.all([
-    prisma.user.create({
+  // Create 120 users
+  console.log('👥 Creating 120 users...');
+  const users = [];
+
+  for (let i = 0; i < 120; i++) {
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i}@email.com`;
+    const phone = Math.random() < 0.8 ? generatePhoneNumber() : null; // 80% have phone numbers
+
+    const user = await prisma.user.create({
       data: {
-        email: 'john.doe@email.com',
-        phone: '+1234567890',
-        firstName: 'John',
-        lastName: 'Doe',
+        email,
+        phone,
+        firstName,
+        lastName,
+        createdAt: randomDateBetween(new Date('2023-01-01'), new Date('2024-12-01')),
       },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'jane.smith@email.com',
-        phone: '+1234567891',
-        firstName: 'Jane',
-        lastName: 'Smith',
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'mike.johnson@email.com',
-        phone: '+1234567892',
-        firstName: 'Mike',
-        lastName: 'Johnson',
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'sarah.wilson@email.com',
-        phone: '+1234567893',
-        firstName: 'Sarah',
-        lastName: 'Wilson',
-      },
-    }),
-    prisma.user.create({
-      data: {
-        email: 'alex.brown@email.com',
-        phone: '+1234567894',
-        firstName: 'Alex',
-        lastName: 'Brown',
-      },
-    }),
-  ]);
+    });
+
+    users.push(user);
+  }
 
   console.log(`✅ Created ${users.length} users`);
 
-  // Create Memberships
-  console.log('🏋️ Creating memberships...');
-  const currentDate = new Date();
-  const memberships = await Promise.all([
-    // John Doe - Premium Monthly (Active)
-    prisma.membership.create({
+  // Create active memberships for ALL 120 users expiring in October 2025
+  console.log('🎫 Creating active memberships for all users...');
+  const currentDate = new Date('2025-09-18'); // Current date
+  const memberships = [];
+
+  for (let i = 0; i < users.length; i++) {
+    const user = users[i];
+    const plan = membershipPlans[Math.floor(Math.random() * membershipPlans.length)];
+
+    // Generate random expiration date in October 2025 (1st to 31st)
+    const octoberDay = Math.floor(Math.random() * 31) + 1;
+    const endDate = new Date(2025, 9, octoberDay); // October is month 9 (0-indexed)
+
+    // Calculate start date based on plan duration
+    const startDate = new Date(endDate);
+    startDate.setMonth(startDate.getMonth() - plan.durationMonths);
+
+    // All memberships are active and paid
+    const status: 'ACTIVE' = 'ACTIVE';
+    const paymentStatus: 'PAID' = 'PAID';
+    const lastPaymentDate = startDate;
+
+    // Set next payment due for monthly plans
+    let nextPaymentDue: Date | null = null;
+    if (plan.durationMonths === 1) {
+      nextPaymentDue = new Date(endDate);
+    }
+
+    const membership = await prisma.membership.create({
       data: {
-        userId: users[0].id,
-        planId: membershipPlans[1].id, // Premium Monthly
-        startDate: new Date(currentDate.getTime() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
-        endDate: new Date(currentDate.getTime() + 15 * 24 * 60 * 60 * 1000), // 15 days from now
-        status: 'ACTIVE',
-        paymentStatus: 'PAID',
-        lastPaymentDate: new Date(currentDate.getTime() - 15 * 24 * 60 * 60 * 1000),
-        nextPaymentDue: new Date(currentDate.getTime() + 15 * 24 * 60 * 60 * 1000),
-        notes: 'VIP member since 2023',
+        userId: user.id,
+        planId: plan.id,
+        startDate,
+        endDate,
+        status,
+        paymentStatus,
+        lastPaymentDate,
+        nextPaymentDue,
+        notes: Math.random() < 0.1 ? 'Special arrangement - corporate discount' : null,
+        createdAt: startDate,
       },
-    }),
-    // Jane Smith - Basic Annual (Active)
-    prisma.membership.create({
-      data: {
-        userId: users[1].id,
-        planId: membershipPlans[2].id, // Basic Annual
-        startDate: new Date(currentDate.getTime() - 90 * 24 * 60 * 60 * 1000), // 90 days ago
-        endDate: new Date(currentDate.getTime() + 275 * 24 * 60 * 60 * 1000), // ~9 months from now
-        status: 'ACTIVE',
-        paymentStatus: 'PAID',
-        lastPaymentDate: new Date(currentDate.getTime() - 90 * 24 * 60 * 60 * 1000),
-        nextPaymentDue: new Date(currentDate.getTime() + 275 * 24 * 60 * 60 * 1000),
-        notes: 'Annual membership holder',
-      },
-    }),
-    // Mike Johnson - Basic Monthly (Payment Overdue)
-    prisma.membership.create({
-      data: {
-        userId: users[2].id,
-        planId: membershipPlans[0].id, // Basic Monthly
-        startDate: new Date(currentDate.getTime() - 35 * 24 * 60 * 60 * 1000), // 35 days ago
-        endDate: new Date(currentDate.getTime() - 5 * 24 * 60 * 60 * 1000), // 5 days ago (expired)
-        status: 'EXPIRED',
-        paymentStatus: 'OVERDUE',
-        lastPaymentDate: new Date(currentDate.getTime() - 35 * 24 * 60 * 60 * 1000),
-        nextPaymentDue: new Date(currentDate.getTime() - 5 * 24 * 60 * 60 * 1000),
-        notes: 'Needs to renew membership',
-      },
-    }),
-    // Sarah Wilson - Student Plan (Active)
-    prisma.membership.create({
-      data: {
-        userId: users[3].id,
-        planId: membershipPlans[4].id, // Student Plan
-        startDate: new Date(currentDate.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
-        endDate: new Date(currentDate.getTime() + 20 * 24 * 60 * 60 * 1000), // 20 days from now
-        status: 'ACTIVE',
-        paymentStatus: 'PAID',
-        lastPaymentDate: new Date(currentDate.getTime() - 10 * 24 * 60 * 60 * 1000),
-        nextPaymentDue: new Date(currentDate.getTime() + 20 * 24 * 60 * 60 * 1000),
-        notes: 'University student discount applied',
-      },
-    }),
-    // Alex Brown - Premium Annual (Active)
-    prisma.membership.create({
-      data: {
-        userId: users[4].id,
-        planId: membershipPlans[3].id, // Premium Annual
-        startDate: new Date(currentDate.getTime() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-        endDate: new Date(currentDate.getTime() + 335 * 24 * 60 * 60 * 1000), // ~11 months from now
-        status: 'ACTIVE',
-        paymentStatus: 'PAID',
-        lastPaymentDate: new Date(currentDate.getTime() - 30 * 24 * 60 * 60 * 1000),
-        nextPaymentDue: new Date(currentDate.getTime() + 335 * 24 * 60 * 60 * 1000),
-        notes: 'Corporate membership',
-      },
-    }),
-  ]);
+    });
+
+    memberships.push(membership);
+  }
 
   console.log(`✅ Created ${memberships.length} memberships`);
 
-  // Create Payments
-  console.log('💳 Creating payments...');
-  const payments = await Promise.all([
-    // John's payment
-    prisma.payment.create({
-      data: {
-        membershipId: memberships[0].id,
-        userId: users[0].id,
-        amount: 49.99,
-        paymentDate: new Date(currentDate.getTime() - 15 * 24 * 60 * 60 * 1000),
-        paymentMethod: 'credit_card',
-        monthsPaid: 1,
-        notes: 'Monthly premium payment',
-        processedBy: 'admin',
-      },
-    }),
-    // Jane's annual payment
-    prisma.payment.create({
-      data: {
-        membershipId: memberships[1].id,
-        userId: users[1].id,
-        amount: 299.99,
-        paymentDate: new Date(currentDate.getTime() - 90 * 24 * 60 * 60 * 1000),
-        paymentMethod: 'bank_transfer',
-        monthsPaid: 12,
-        notes: 'Annual basic membership payment',
-        processedBy: 'admin',
-      },
-    }),
-    // Mike's last payment (before becoming overdue)
-    prisma.payment.create({
-      data: {
-        membershipId: memberships[2].id,
-        userId: users[2].id,
-        amount: 29.99,
-        paymentDate: new Date(currentDate.getTime() - 35 * 24 * 60 * 60 * 1000),
-        paymentMethod: 'cash',
-        monthsPaid: 1,
-        notes: 'Last payment before expiration',
-        processedBy: 'admin',
-      },
-    }),
-    // Sarah's student payment
-    prisma.payment.create({
-      data: {
-        membershipId: memberships[3].id,
-        userId: users[3].id,
-        amount: 19.99,
-        paymentDate: new Date(currentDate.getTime() - 10 * 24 * 60 * 60 * 1000),
-        paymentMethod: 'debit_card',
-        monthsPaid: 1,
-        notes: 'Student discount applied',
-        processedBy: 'admin',
-      },
-    }),
-    // Alex's annual premium payment
-    prisma.payment.create({
-      data: {
-        membershipId: memberships[4].id,
-        userId: users[4].id,
-        amount: 499.99,
-        paymentDate: new Date(currentDate.getTime() - 30 * 24 * 60 * 60 * 1000),
-        paymentMethod: 'corporate_account',
-        monthsPaid: 12,
-        notes: 'Corporate annual premium payment',
-        processedBy: 'admin',
-      },
-    }),
-  ]);
+  // Create payment history
+  console.log('💳 Creating payment history...');
+  let paymentCount = 0;
 
-  console.log(`✅ Created ${payments.length} payments`);
+  for (const membership of memberships) {
+    const plan = membershipPlans.find(p => p.id === membership.planId)!;
+    const user = users.find(u => u.id === membership.userId)!;
 
-  // Create Notifications
-  console.log('🔔 Creating notifications...');
-  const notifications = await Promise.all([
-    // John's upcoming payment reminder
-    prisma.notification.create({
-      data: {
-        userId: users[0].id,
-        title: 'Payment Due Soon',
-        message: 'Your premium membership payment is due in 5 days.',
-        type: 'PAYMENT_REMINDER',
-        isSent: false,
-        scheduledFor: new Date(currentDate.getTime() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
-      },
-    }),
-    // Mike's expired membership notification
-    prisma.notification.create({
-      data: {
-        userId: users[2].id,
-        title: 'Membership Expired',
-        message: 'Your membership has expired. Please renew to continue access.',
-        type: 'MEMBERSHIP_EXPIRED',
-        isSent: true,
-        scheduledFor: new Date(currentDate.getTime() - 5 * 24 * 60 * 60 * 1000),
-        sentAt: new Date(currentDate.getTime() - 4 * 24 * 60 * 60 * 1000),
-      },
-    }),
-    // Sarah's membership expiring soon
-    prisma.notification.create({
-      data: {
-        userId: users[3].id,
-        title: 'Membership Expiring Soon',
-        message: 'Your student membership expires in 7 days. Renew now to avoid interruption.',
-        type: 'MEMBERSHIP_EXPIRING',
-        isSent: false,
-        scheduledFor: new Date(currentDate.getTime() + 13 * 24 * 60 * 60 * 1000), // 13 days from now
-      },
-    }),
-    // Jane's annual renewal reminder
-    prisma.notification.create({
-      data: {
-        userId: users[1].id,
-        title: 'Annual Renewal Reminder',
-        message: 'Your annual membership will expire in 30 days. Consider renewing early for discounts.',
-        type: 'MEMBERSHIP_EXPIRING',
-        isSent: false,
-        scheduledFor: new Date(currentDate.getTime() + 245 * 24 * 60 * 60 * 1000), // ~8 months from now
-      },
-    }),
-  ]);
+    // Create initial payment for most memberships
+    if (membership.paymentStatus !== 'PENDING' && membership.lastPaymentDate) {
+      await prisma.payment.create({
+        data: {
+          membershipId: membership.id,
+          userId: user.id,
+          amount: plan.price,
+          paymentDate: membership.lastPaymentDate,
+          paymentMethod: Math.random() < 0.7 ? 'card' : 'cash',
+          monthsPaid: plan.durationMonths,
+          processedBy: 'system',
+          createdAt: membership.lastPaymentDate,
+        },
+      });
+      paymentCount++;
+    }
 
-  console.log(`✅ Created ${notifications.length} notifications`);
+    // For active monthly memberships, create additional payments
+    if (membership.status === 'ACTIVE' && plan.durationMonths === 1 && membership.startDate) {
+      let paymentDate = new Date(membership.startDate);
+      const endDate = membership.endDate;
 
-  console.log('🎉 Seed completed successfully!');
+      while (paymentDate < endDate && paymentDate < currentDate) {
+        paymentDate = addMonths(paymentDate, 1);
+
+        if (paymentDate < currentDate) {
+          await prisma.payment.create({
+            data: {
+              membershipId: membership.id,
+              userId: user.id,
+              amount: plan.price,
+              paymentDate,
+              paymentMethod: Math.random() < 0.7 ? 'card' : 'cash',
+              monthsPaid: 1,
+              processedBy: Math.random() < 0.5 ? 'front_desk' : 'auto_billing',
+              createdAt: paymentDate,
+            },
+          });
+          paymentCount++;
+        }
+      }
+    }
+  }
+
+  console.log(`✅ Created ${paymentCount} payments`);
+
+  // Create notifications for October expiring memberships
+  console.log('🔔 Creating notifications for October expiring memberships...');
+
+  let notificationCount = 0;
+  for (const membership of memberships) {
+    const user = users.find(u => u.id === membership.userId)!;
+    const daysUntilExpiry = Math.ceil((membership.endDate!.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Create expiring notification for memberships expiring in the next 30 days
+    if (daysUntilExpiry <= 30 && daysUntilExpiry > 0) {
+      const isAlreadySent = Math.random() < 0.4; // 40% already sent
+
+      await prisma.notification.create({
+        data: {
+          userId: user.id,
+          title: 'Membership Expiring in October',
+          message: `Hi ${user.firstName}, your gym membership expires on ${membership.endDate!.toLocaleDateString()}. Please renew to continue enjoying our facilities.`,
+          type: 'MEMBERSHIP_EXPIRING',
+          isSent: isAlreadySent,
+          scheduledFor: new Date(membership.endDate!.getTime() - 7 * 24 * 60 * 60 * 1000), // 7 days before expiry
+          sentAt: isAlreadySent ? new Date(membership.endDate!.getTime() - 7 * 24 * 60 * 60 * 1000) : null,
+          createdAt: new Date(membership.endDate!.getTime() - 14 * 24 * 60 * 60 * 1000), // Created 14 days before expiry
+        },
+      });
+      notificationCount++;
+    }
+  }
+
+  console.log(`✅ Created ${notificationCount} notifications`);
+
+  // Create a sample newsletter
+  console.log('📧 Creating sample newsletter...');
+  await prisma.newsletter.create({
+    data: {
+      title: 'New Year, New You - Special Offers Inside!',
+      message: 'Start your fitness journey with our special New Year promotions. Join now and get 20% off your first month!',
+      type: 'GENERAL',
+      priority: 'HIGH',
+      status: 'SENT',
+      scheduledFor: new Date('2025-01-01'),
+      sentAt: new Date('2025-01-01'),
+      recipientCount: users.length,
+      createdAt: new Date('2024-12-15'),
+    },
+  });
+
+  console.log('✅ Created sample newsletter');
+
+  // Print summary statistics
+  console.log('\n📊 SEEDING SUMMARY:');
+  console.log(`👥 Users: ${users.length}`);
+  console.log(`🎫 Memberships: ${memberships.length} (All Active)`);
+  console.log(`💳 Payments: ${paymentCount}`);
+  console.log(`🔔 Notifications: ${notificationCount}`);
+
+  const expiringInOctober = memberships.filter(m => {
+    if (!m.endDate) return false;
+    return m.endDate.getMonth() === 9; // October is month 9 (0-indexed)
+  }).length;
+
+  // Group by expiration week in October
+  const week1 = memberships.filter(m => m.endDate && m.endDate.getDate() <= 7).length;
+  const week2 = memberships.filter(m => m.endDate && m.endDate.getDate() > 7 && m.endDate.getDate() <= 14).length;
+  const week3 = memberships.filter(m => m.endDate && m.endDate.getDate() > 14 && m.endDate.getDate() <= 21).length;
+  const week4 = memberships.filter(m => m.endDate && m.endDate.getDate() > 21).length;
+
+  console.log(`\n📅 OCTOBER EXPIRATION BREAKDOWN:`);
+  console.log(`🗓️  Week 1 (Oct 1-7): ${week1} memberships`);
+  console.log(`🗓️  Week 2 (Oct 8-14): ${week2} memberships`);
+  console.log(`🗓️  Week 3 (Oct 15-21): ${week3} memberships`);
+  console.log(`🗓️  Week 4 (Oct 22-31): ${week4} memberships`);
+  console.log(`📊 Total expiring in October: ${expiringInOctober}`);
+
+  console.log('\n🎉 All 120 users have active memberships expiring in October 2025!');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e);
+    console.error('❌ Error during seeding:', e);
     process.exit(1);
   })
   .finally(async () => {

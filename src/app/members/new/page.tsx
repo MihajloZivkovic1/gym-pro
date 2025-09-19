@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { ArrowLeft, CreditCard, Banknote } from 'lucide-react';
+import { ArrowLeft, CreditCard, Banknote, Mail, Bell } from 'lucide-react';
 import Link from 'next/link';
 
 interface MembershipPlan {
@@ -26,6 +26,10 @@ export default function AddMemberPage() {
     lastName: '',
     email: '',
     phone: '',
+
+    // Subscription preferences
+    subscribeToNewsletter: true,
+    subscribeToNotifications: true,
 
     // Membership info
     membershipStart: new Date().toISOString().split('T')[0],
@@ -108,6 +112,10 @@ export default function AddMemberPage() {
           lastName: formData.lastName,
           email: formData.email,
           phone: formData.phone,
+
+          // Subscription preferences
+          subscribeToNewsletter: formData.subscribeToNewsletter,
+          subscribeToNotifications: formData.subscribeToNotifications,
 
           // Membership data
           membershipStart: formData.membershipStart,
@@ -193,6 +201,45 @@ export default function AddMemberPage() {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
+
+            {/* Subscription Preferences */}
+            <div className="space-y-3 pt-4 border-t border-gray-200">
+              <h3 className="text-sm font-medium text-gray-900">Pretplate i obaveštenja</h3>
+
+              <div className="space-y-3">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.subscribeToNewsletter}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      subscribeToNewsletter: e.target.checked
+                    })}
+                    className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-gray-900">
+                        Newsletter pretplata
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Član će primati obaveštenja o održavanju, događajima i opšte informacije
+                    </p>
+                  </div>
+                </label>
+
+              </div>
+
+              {(!formData.subscribeToNewsletter) && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ Član neće primati nikakva obaveštenja. Možete ovo promeniti kasnije u profilu člana.
+                  </p>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
