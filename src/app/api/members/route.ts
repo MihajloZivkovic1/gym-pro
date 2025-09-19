@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     });
 
-    // Add computed fields and filter by status
     const membersWithStatus = members
       .map(member => {
         const activeMembership = member.memberships[0];
@@ -72,12 +71,14 @@ export async function POST(request: NextRequest) {
       lastName,
       email,
       phone,
+      subscribeToNewsletter,
+      subscribeToNotifications,
       membershipStart,
       planId,
       payment
     } = body;
 
-    // Validate required fields
+
     if (!firstName || !lastName || !email || !planId || !membershipStart) {
       return NextResponse.json(
         { error: 'Sva obavezna polja moraju biti popunjena' },
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate payment data
+
     if (!payment || !payment.amount || !payment.paymentMethod || !payment.monthsPaid) {
       return NextResponse.json(
         { error: 'Podaci o plaćanju su obavezni' },
@@ -93,7 +94,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if email already exists
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
@@ -105,7 +105,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the membership plan to calculate end date
     const membershipPlan = await prisma.membershipPlan.findUnique({
       where: { id: planId }
     });
@@ -134,7 +133,9 @@ export async function POST(request: NextRequest) {
           firstName,
           lastName,
           email,
-          phone: phone || null
+          phone: phone || null,
+          subscribeToNewsletter: subscribeToNewsletter ?? true,
+          subscribeToNotifications: false
         }
       });
 

@@ -18,6 +18,10 @@ model User {
   lastName  String   @map("last_name")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  
+  //subscriptions
+  subscribeToNewsletter     Boolean @default(true) @map("subscribe_to_newsletter")
+  subscribeToNotifications  Boolean @default(false) @map("subscribe_to_notifications")
 
   // Relations
   memberships   Membership[]
@@ -99,6 +103,25 @@ model Notification {
   @@map("notifications")
 }
 
+// New Newsletter model for broadcast messages
+model Newsletter {
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String
+  message       String
+  type          NewsletterType
+  priority      Priority          @default(MEDIUM)
+  status        NewsletterStatus  @default(DRAFT)
+  startDate     DateTime?         @map("start_date") @db.Date
+  endDate       DateTime?         @map("end_date") @db.Date
+  scheduledFor  DateTime?         @map("scheduled_for")
+  sentAt        DateTime?         @map("sent_at")
+  recipientCount Int              @default(0) @map("recipient_count")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  @@map("newsletters")
+}
+
 enum MembershipStatus {
   ACTIVE
   EXPIRED
@@ -122,4 +145,29 @@ enum NotificationType {
   PAYMENT_REMINDER
 
   @@map("notification_type")
+}
+
+enum NewsletterType {
+  CLOSURE
+  MAINTENANCE
+  EVENT
+  GENERAL
+
+  @@map("newsletter_type")
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+
+  @@map("priority")
+}
+
+enum NewsletterStatus {
+  DRAFT
+  SENT
+  SCHEDULED
+
+  @@map("newsletter_status")
 }
