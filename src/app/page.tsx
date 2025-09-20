@@ -114,16 +114,19 @@ export default async function Dashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-
-        {/* Swipeable Membership Cards - Takes 1 column */}
-        <div>
-          <SwipeableCards
-            expiredMemberships={expiredMemberships}
-            expiringMemberships={expiringMemberships}
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {/* Recent Activity - Takes 2-3 columns in landscape */}
+        <div className="lg:col-span-2 xl:col-span-3">
+          {/* Your activity component */}
         </div>
 
+        {/* Swipeable Cards - Takes 1 column */}
+        <div className="lg:col-span-1 xl:col-span-1">
+          <SwipeableCards
+            expiringMemberships={expiringMemberships}
+            expiredMemberships={expiredMemberships}
+          />
+        </div>
       </div>
     </div>
   );
