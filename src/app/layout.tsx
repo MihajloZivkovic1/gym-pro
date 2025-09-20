@@ -17,6 +17,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="sr">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#10b981" />
+        <meta name="description" content="Sistem za upravljanje članovima teretane" />
+
+        {/* PWA Manifest */}
+        <link rel="manifest" href="/manifest.json" />
+
+        {/* iOS specific */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Gym Pro" />
+      </head>
+
       <body className={inter.className}>
         <div className="min-h-screen bg-gray-50">
           <Header />
