@@ -59,7 +59,7 @@ const NotificationManager: React.FC = () => {
     CLOSURE: { label: 'Godisnji odmor', icon: AlertTriangle, color: 'text-red-600' },
     MAINTENANCE: { label: 'Održavanje', icon: Clock, color: 'text-orange-600' },
     EVENT: { label: 'Događaj', icon: Calendar, color: 'text-blue-600' },
-    GENERAL: { label: 'Opšte obaveštenje/Praznici', icon: Info, color: 'text-gray-600' }
+    GENERAL: { label: 'Opšte obaveštenje', icon: Info, color: 'text-gray-600' }
   };
 
   const priorityColors = {
@@ -277,14 +277,14 @@ const NotificationManager: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Prioritet
                 </label>
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                   {(['LOW', 'MEDIUM', 'HIGH'] as const).map((priority) => (
                     <button
                       key={priority}
                       onClick={() => handleInputChange('priority', priority)}
-                      className={`px-4 py-2 rounded-lg border-2 transition-all ${formData.priority === priority
+                      className={`flex-1 px-4 py-3 sm:py-2 rounded-lg border-2 transition-all text-center min-h-[44px] ${formData.priority === priority
                         ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300 active:bg-gray-50'
                         }`}
                       disabled={sending}
                     >
