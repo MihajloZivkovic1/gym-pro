@@ -6,18 +6,33 @@ import { calculateMembershipStatus } from '@/lib/utils';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+
+    // Pagination parameters
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const skip = (page - 1) * limit;
+
+    // Filter parameters
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || 'all';
 
-    // Fetch members with their active memberships
+    // Build where conditions - this matches your original structure
+    const whereConditions = {
+      OR: search ? [
+        { firstName: { contains: search, mode: 'insensitive' as const } },
+        { lastName: { contains: search, mode: 'insensitive' as const } },
+        { email: { contains: search, mode: 'insensitive' as const } }
+      ] : undefined
+    };
+
+    // Remove undefined properties
+    if (!search) {
+      delete whereConditions.OR;
+    }
+
+    // Fetch members with their active memberships - same as your original
     const members = await prisma.user.findMany({
-      where: {
-        OR: search ? [
-          { firstName: { contains: search, mode: 'insensitive' } },
-          { lastName: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } }
-        ] : undefined
-      },
+      where: whereConditions,
       include: {
         memberships: {
           where: { status: 'ACTIVE' },
@@ -33,13 +48,14 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     });
 
+    // Process members with status - same as your original logic
     const membersWithStatus = members
       .map(member => {
-        const activeMembership = member.memberships[0];
-        let membershipStatus = 'expired';
+        const activeMembership = member.memberships?.[0];
+        let membershipStatus: 'active' | 'expiring' | 'expired' = 'expired';
 
         if (activeMembership) {
-          membershipStatus = calculateMembershipStatus(activeMembership.endDate.toISOString());
+          membershipStatus = calculateMembershipStatus(activeMembership.endDate.toISOString()) as 'active' | 'expiring' | 'expired';
         }
 
         return {
@@ -53,7 +69,34 @@ export async function GET(request: NextRequest) {
         return member.membershipStatus === status;
       });
 
-    return NextResponse.json({ members: membersWithStatus });
+    // Apply pagination to the filtered results
+    const totalCount = membersWithStatus.length;
+    const paginatedMembers = membersWithStatus.slice(skip, skip + limit);
+
+    // Calculate stats
+    const stats = {
+      total: totalCount,
+      active: membersWithStatus.filter(m => m.membershipStatus === 'active').length,
+      expiring: membersWithStatus.filter(m => m.membershipStatus === 'expiring').length,
+      expired: membersWithStatus.filter(m => m.membershipStatus === 'expired').length
+    };
+
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return NextResponse.json({
+      members: paginatedMembers,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1
+      },
+      stats
+    });
+
   } catch (error) {
     console.error('Members API error:', error);
     return NextResponse.json(
@@ -78,14 +121,12 @@ export async function POST(request: NextRequest) {
       payment
     } = body;
 
-
     if (!firstName || !lastName || !email || !planId || !membershipStart) {
       return NextResponse.json(
         { error: 'Sva obavezna polja moraju biti popunjena' },
         { status: 400 }
       );
     }
-
 
     if (!payment || !payment.amount || !payment.paymentMethod || !payment.monthsPaid) {
       return NextResponse.json(

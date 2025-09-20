@@ -166,7 +166,7 @@ export async function GET() {
       })
       .slice(0, 10);
 
-    // Expiring memberships (next 30 days instead of 3 days for more visibility)
+    // Expiring memberships (next 30 days)
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
@@ -186,10 +186,71 @@ export async function GET() {
       take: 5
     });
 
+    // Expired memberships (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const expiredMemberships = await prisma.membership.findMany({
+      where: {
+        status: 'ACTIVE',
+        endDate: {
+          lt: new Date(), // Already expired
+          gte: thirtyDaysAgo // But not too old (last 30 days)
+        }
+      },
+      include: {
+        user: true,
+        plan: true
+      },
+      orderBy: { endDate: 'desc' }, // Most recently expired first
+      take: 5
+    });
+
+    // Also get members with no active memberships at all
+    const membersWithoutActiveMemberships = await prisma.user.findMany({
+      where: {
+        memberships: {
+          none: {
+            status: 'ACTIVE'
+          }
+        }
+      },
+      include: {
+        memberships: {
+          include: { plan: true },
+          orderBy: { endDate: 'desc' },
+          take: 1 // Get their last membership to show when it expired
+        }
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 10
+    });
+
+    // Combine expired memberships and members without active memberships
+    const allExpiredMemberships = [
+      ...expiredMemberships.map(membership => ({
+        id: membership.id,
+        user: membership.user,
+        plan: membership.plan,
+        endDate: membership.endDate,
+        type: 'expired_membership' as const
+      })),
+      ...membersWithoutActiveMemberships.map(member => ({
+        id: `user-${member.id}`,
+        user: member,
+        plan: member.memberships[0]?.plan || null,
+        endDate: member.memberships[0]?.endDate || member.updatedAt,
+        type: 'no_active_membership' as const
+      }))
+    ]
+      .sort((a, b) => b.endDate.getTime() - a.endDate.getTime()) // Most recently expired first
+      .slice(0, 5); // Limit to 5 most relevant
+
     return NextResponse.json({
       stats,
       activities: sortedActivities,
-      expiringMemberships
+      expiringMemberships,
+      expiredMemberships: allExpiredMemberships
     });
   } catch (error) {
     console.error('Dashboard API error:', error);

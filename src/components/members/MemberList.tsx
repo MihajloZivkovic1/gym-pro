@@ -1,13 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Edit, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { formatDate } from '@/lib/utils';
 import { PaymentButton } from './PaymentButton';
 import { DeleteModal } from './DeleteModal';
-
 
 interface Member {
   id: string;
@@ -32,6 +31,19 @@ export function MemberList({ members, onMemberUpdate }: MemberListProps) {
   const [deletingMember, setDeletingMember] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  // Remove duplicates and ensure unique keys
+  const uniqueMembers = useMemo(() => {
+    const seen = new Set();
+    return members.filter(member => {
+      if (seen.has(member.id)) {
+        console.warn(`Duplicate member found with ID: ${member.id}`);
+        return false;
+      }
+      seen.add(member.id);
+      return true;
+    });
+  }, [members]);
 
   const handleDeleteClick = (memberId: string, memberName: string) => {
     setMemberToDelete({ id: memberId, name: memberName });
@@ -115,7 +127,7 @@ export function MemberList({ members, onMemberUpdate }: MemberListProps) {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {members.length === 0 ? (
+              {uniqueMembers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                     <div className="space-y-2">
@@ -128,8 +140,8 @@ export function MemberList({ members, onMemberUpdate }: MemberListProps) {
                   </td>
                 </tr>
               ) : (
-                members.map((member) => (
-                  <tr key={member.id} className="hover:bg-gray-50">
+                uniqueMembers.map((member, index) => (
+                  <tr key={`${member.id}-${index}`} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center mr-3">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Search, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -8,49 +8,130 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardContent } from '@/components/ui/Card';
 import { MemberList } from '@/components/members/MemberList';
 
+interface Member {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  membershipStatus: 'active' | 'expiring' | 'expired';
+  activeMembership?: {
+    id: string;
+    plan: { name: string; price: number };
+    endDate: string;
+  };
+}
+
+interface PaginatedResponse {
+  members: Member[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+  };
+  stats: {
+    total: number;
+    active: number;
+    expiring: number;
+    expired: number;
+  };
+}
+
 export default function MembersPage() {
-  const [members, setMembers] = useState([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasNext, setHasNext] = useState(true);
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    expiring: 0,
+    expired: 0
+  });
 
-  const fetchMembers = async () => {
+  const ITEMS_PER_PAGE = 20;
+
+  const fetchMembers = async (page: number = 1, reset: boolean = false) => {
     try {
+      if (page === 1) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+
       const params = new URLSearchParams();
+      params.append('page', page.toString());
+      params.append('limit', ITEMS_PER_PAGE.toString());
       if (searchTerm) params.append('search', searchTerm);
       if (statusFilter !== 'all') params.append('status', statusFilter);
 
       const response = await fetch(`/api/members?${params}`);
-      const data = await response.json();
+      const data: PaginatedResponse = await response.json();
 
       if (data.members) {
-        setMembers(data.members);
+        if (reset || page === 1) {
+          setMembers(data.members);
+        } else {
+          setMembers(prev => [...prev, ...data.members]);
+        }
+
+        setHasNext(data.pagination.hasNext);
+        setCurrentPage(page);
+        setStats(data.stats);
       }
     } catch (error) {
       console.error('Error fetching members:', error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
-  useEffect(() => {
-    fetchMembers();
-  }, [searchTerm, statusFilter]);
+  const loadMore = () => {
+    if (hasNext && !loadingMore) {
+      fetchMembers(currentPage + 1);
+    }
+  };
 
-  // Debounce search
+  // Reset and fetch when search/filter changes
   useEffect(() => {
+    setCurrentPage(1);
+    setMembers([]);
     const timer = setTimeout(() => {
-      fetchMembers();
-    }, 300);
+      fetchMembers(1, true);
+    }, searchTerm ? 300 : 0); // Debounce search
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, statusFilter]);
 
-  const stats = {
-    total: members.length,
-    active: members.filter((m: any) => m.membershipStatus === 'active').length,
-    expiring: members.filter((m: any) => m.membershipStatus === 'expiring').length,
-    expired: members.filter((m: any) => m.membershipStatus === 'expired').length
+  // Infinite scroll detection
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 1000 && // Load when 1000px from bottom
+        hasNext &&
+        !loadingMore &&
+        !loading
+      ) {
+        loadMore();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasNext, loadingMore, loading, currentPage]);
+
+  const handleMemberUpdate = () => {
+    // Reset and refetch all data
+    setCurrentPage(1);
+    setMembers([]);
+    fetchMembers(1, true);
   };
 
   return (
@@ -113,14 +194,45 @@ export default function MembersPage() {
       </div>
 
       {/* Members List */}
-      {loading ? (
+      {loading && members.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <p>⏳ Učitavanje članova...</p>
           </CardContent>
         </Card>
       ) : (
-        <MemberList members={members} onMemberUpdate={fetchMembers} />
+        <>
+          <MemberList members={members} onMemberUpdate={handleMemberUpdate} />
+
+          {/* Load More Indicator */}
+          {loadingMore && (
+            <Card>
+              <CardContent className="p-4 text-center">
+                <p className="text-gray-500">⏳ Učitavanje dodatnih članova...</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Manual Load More Button (optional fallback) */}
+          {hasNext && !loadingMore && !loading && (
+            <div className="text-center">
+              <Button
+                variant="ghost"
+                onClick={loadMore}
+                className="w-full md:w-auto"
+              >
+                Učitaj još članova
+              </Button>
+            </div>
+          )}
+
+          {/* End of list indicator */}
+          {!hasNext && members.length > 0 && (
+            <div className="text-center py-4">
+              <p className="text-gray-500">✅ Svi članovi su učitani</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
