@@ -24,31 +24,3 @@ body {
   color: var("black");
   font-family: Arial, Helvetica, sans-serif;
 }
-
-/* Force landscape on tablets */
-@media screen and (max-width: 1024px) and (orientation: portrait) {
-  body::before {
-    content: "📱 Molimo okrenite uređaj u landscape mode";
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: #10b981;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    font-size: 1.2rem;
-    text-align: center;
-    padding: 2rem;
-  }
-}
-
-/* Hide main content in portrait on tablets */
-@media screen and (max-width: 1024px) and (orientation: portrait) {
-  .main-content {
-    display: none;
-  }
-}
