@@ -58,7 +58,7 @@ export default async function Dashboard() {
       <StatsCards stats={stats} />
 
       {/* Quick Actions */}
-      <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+      <Card className="border border-gray-200 shadow-sm bg-white">
         <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
@@ -71,45 +71,43 @@ export default async function Dashboard() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link href="/members/new" className="group">
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105">
-                <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-all duration-300"></div>
-                <div className="relative z-10 flex items-center gap-3">
-                  <Plus className="w-6 h-6" />
-                  <div>
-                    <p className="font-semibold">Dodaj člana</p>
-                    <p className="text-blue-100 text-sm">Registruj novog člana</p>
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            {/* Add Member Card */}
+            <Link href="/members/new" className="group block">
+              <div className="relative bg-white rounded-2xl p-8 text-center transition-all duration-300 hover:shadow-lg hover:scale-105 border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50">
+                <div className="w-16 h-16 mx-auto mb-6 bg-blue-100 rounded-2xl flex items-center justify-center group-hover:bg-blue-500 transition-colors duration-300">
+                  <Plus className="w-8 h-8 text-blue-600 group-hover:text-white transition-colors duration-300" />
                 </div>
-              </div>
-            </Link>
-            <Link href="/newsletters" className="group">
-              <div className="group">
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105">
-                  <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-all duration-300"></div>
-                  <div className="relative z-10 flex items-center gap-3">
-                    <Mail className="w-6 h-6" />
-                    <div>
-                      <p className="font-semibold">Podsetnici</p>
-                      <p className="text-emerald-100 text-sm">Pošalji obavestenja</p>
-                    </div>
-                  </div>
-                </div>
+                <h3 className="font-semibold text-slate-900 mb-2">Dodaj člana</h3>
+                <p className="text-sm text-slate-600">Registruj novog člana</p>
               </div>
             </Link>
 
-            <div className="group">
-              <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 p-6 text-white transition-all duration-300 hover:shadow-xl hover:scale-105">
-                <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition-all duration-300"></div>
-                <div className="relative z-10 flex items-center gap-3">
-                  <FileDown className="w-6 h-6" />
-                  <div>
-                    <ExportButton className="w-full h-12 flex items-center gap-2" />
-                  </div>
+            {/* Newsletters Card */}
+            <Link href="/newsletters" className="group block">
+              <div className="relative bg-gray-50 rounded-2xl p-8 text-center transition-all duration-300 hover:bg-white hover:shadow-lg hover:scale-105 border border-gray-100 hover:border-gray-200">
+                <div className="w-16 h-16 mx-auto mb-6 bg-emerald-100 rounded-2xl flex items-center justify-center group-hover:bg-emerald-500 transition-colors duration-300">
+                  <Mail className="w-8 h-8 text-emerald-600 group-hover:text-white transition-colors duration-300" />
+                </div>
+                <h3 className="font-semibold text-slate-900 mb-2">Podsetnici</h3>
+                <p className="text-sm text-slate-600">Pošalji obavestenja</p>
+              </div>
+            </Link>
+
+            {/* Export Card */}
+            <div className="group block cursor-pointer">
+              <div className="relative bg-gray-50 rounded-2xl p-8 text-center transition-all duration-300 hover:bg-white hover:shadow-lg hover:scale-105 border border-gray-100 hover:border-gray-200">
+                <div className="w-16 h-16 mx-auto mb-6 bg-purple-100 rounded-2xl flex items-center justify-center group-hover:bg-purple-500 transition-colors duration-300">
+                  <FileDown className="w-8 h-8 text-purple-600 group-hover:text-white transition-colors duration-300" />
+                </div>
+                <h3 className="font-semibold text-slate-900 mb-2">Export</h3>
+                <div className="mt-4">
+                  <ExportButton className="w-full" />
                 </div>
               </div>
             </div>
+
           </div>
         </CardContent>
       </Card>

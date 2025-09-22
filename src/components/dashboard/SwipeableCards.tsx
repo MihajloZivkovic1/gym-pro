@@ -240,13 +240,13 @@ export function SwipeableCards({ expiringMemberships, expiredMemberships }: Swip
                 {membership.type === 'expired_membership' && (
                   <div className="mt-3">
                     <div className="w-full bg-slate-100 rounded-full h-1.5">
-                      <div className="bg-gradient-to-r from-red-400 to-pink-500 h-1.5 rounded-full"
+                      <div className="bg-gradient-to-r from-red-400 to-pink-500 h-1.5 rounded-full" suppressHydrationWarning={true}
                         style={{
                           width: `${Math.max(10, Math.min(100, 100 - ((Date.now() - new Date(membership.endDate).getTime()) / (1000 * 60 * 60 * 24 * 30)) * 100))}%`
                         }}>
                       </div>
                     </div>
-                    <div className="text-xs text-red-500 mt-1">
+                    <div className="text-xs text-red-500 mt-1" suppressHydrationWarning={true}>
                       Istekla pre {Math.ceil((Date.now() - new Date(membership.endDate).getTime()) / (1000 * 60 * 60 * 24))} dana
                     </div>
                   </div>

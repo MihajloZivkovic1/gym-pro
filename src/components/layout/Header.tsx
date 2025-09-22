@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Users, BarChart3, Bell, Menu, X, Newspaper } from 'lucide-react';
 import { useState } from 'react';
-
+import Image from 'next/image'
 export function Header() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -25,11 +25,16 @@ export function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-xl font-bold">⚡</span>
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm border">
+              <Image
+                src="/ikonica512x512.png"
+                alt="GymPro Logo"
+                width={50}
+                height={50}
+              />
             </div>
-            <Link href="/" className="text-xl sm:text-2xl font-bold text-gray-900">
-              GymPro
+            <Link href="/" className="text-xl sm:text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors duration-200">
+              Gym<span className="text-orange-500">Pro</span>
             </Link>
           </div>
 

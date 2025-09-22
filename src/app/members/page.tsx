@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Search, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -22,15 +23,8 @@ interface Member {
   };
 }
 
-interface PaginatedResponse {
+interface AllMembersResponse {
   members: Member[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-  };
   stats: {
     total: number;
     active: number;
@@ -40,13 +34,14 @@ interface PaginatedResponse {
 }
 
 export default function MembersPage() {
-  const [members, setMembers] = useState<Member[]>([]);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const [allMembers, setAllMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasNext, setHasNext] = useState(true);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -54,90 +49,182 @@ export default function MembersPage() {
     expired: 0
   });
 
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = 50; // Show more items per page since we have all data
 
-  const fetchMembers = async (page: number = 1, reset: boolean = false) => {
+  // Initialize from URL parameters
+  useEffect(() => {
+    const urlStatus = searchParams.get('status');
+    const urlSearch = searchParams.get('search');
+
+    if (urlStatus && ['active', 'expiring', 'expired'].includes(urlStatus)) {
+      setStatusFilter(urlStatus);
+    }
+
+    if (urlSearch) {
+      setSearchTerm(urlSearch);
+    }
+  }, [searchParams]);
+
+  // Fetch all members once
+  const fetchAllMembers = async () => {
     try {
-      if (page === 1) {
-        setLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
+      setLoading(true);
 
-      const params = new URLSearchParams();
-      params.append('page', page.toString());
-      params.append('limit', ITEMS_PER_PAGE.toString());
-      if (searchTerm) params.append('search', searchTerm);
-      if (statusFilter !== 'all') params.append('status', statusFilter);
-
-      const response = await fetch(`/api/members?${params}`);
-      const data: PaginatedResponse = await response.json();
+      // Fetch all members in one request (increase limit as needed)
+      const response = await fetch(`/api/members?limit=10000`);
+      const data: AllMembersResponse = await response.json();
 
       if (data.members) {
-        if (reset || page === 1) {
-          setMembers(data.members);
-        } else {
-          setMembers(prev => [...prev, ...data.members]);
-        }
-
-        setHasNext(data.pagination.hasNext);
-        setCurrentPage(page);
+        setAllMembers(data.members);
         setStats(data.stats);
       }
     } catch (error) {
       console.error('Error fetching members:', error);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   };
 
-  const loadMore = () => {
-    if (hasNext && !loadingMore) {
-      fetchMembers(currentPage + 1);
+  // Load all members on component mount
+  useEffect(() => {
+    fetchAllMembers();
+  }, []);
+
+  // Client-side filtering and searching
+  const filteredMembers = useMemo(() => {
+    let filtered = allMembers;
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(member => member.membershipStatus === statusFilter);
     }
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(member =>
+        member.firstName.toLowerCase().includes(searchLower) ||
+        member.lastName.toLowerCase().includes(searchLower) ||
+        member.email.toLowerCase().includes(searchLower) ||
+        (member.phone && member.phone.includes(searchTerm))
+      );
+    }
+
+    return filtered;
+  }, [allMembers, statusFilter, searchTerm]);
+
+  // Client-side pagination
+  const paginatedMembers = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filteredMembers.slice(startIndex, endIndex);
+  }, [filteredMembers, currentPage, ITEMS_PER_PAGE]);
+
+  // Calculate pagination info
+  const totalPages = Math.ceil(filteredMembers.length / ITEMS_PER_PAGE);
+  const hasNext = currentPage < totalPages;
+  const hasPrev = currentPage > 1;
+
+  // Update URL when filters change
+  const updateURL = (newStatusFilter: string, newSearchTerm: string) => {
+    const params = new URLSearchParams();
+
+    if (newStatusFilter !== 'all') {
+      params.set('status', newStatusFilter);
+    }
+
+    if (newSearchTerm.trim()) {
+      params.set('search', newSearchTerm);
+    }
+
+    const newURL = params.toString() ? `/members?${params.toString()}` : '/members';
+    router.replace(newURL, { scroll: false });
   };
 
-  // Reset and fetch when search/filter changes
+  // Handle filter changes
   useEffect(() => {
-    setCurrentPage(1);
-    setMembers([]);
-    const timer = setTimeout(() => {
-      fetchMembers(1, true);
-    }, searchTerm ? 300 : 0); // Debounce search
-
-    return () => clearTimeout(timer);
-  }, [searchTerm, statusFilter]);
-
-  // Infinite scroll detection
-  useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop >=
-        document.documentElement.offsetHeight - 1000 && // Load when 1000px from bottom
-        hasNext &&
-        !loadingMore &&
-        !loading
-      ) {
-        loadMore();
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasNext, loadingMore, loading, currentPage]);
+    setCurrentPage(1); // Reset to first page when filters change
+    updateURL(statusFilter, searchTerm);
+  }, [statusFilter, searchTerm]);
 
   const handleMemberUpdate = () => {
-    // Reset and refetch all data
-    setCurrentPage(1);
-    setMembers([]);
-    fetchMembers(1, true);
+    // Refetch all data when a member is updated
+    fetchAllMembers();
+  };
+
+  const handleStatusFilterChange = (newStatus: string) => {
+    setStatusFilter(newStatus);
+  };
+
+  const handleSearchTermChange = (newSearchTerm: string) => {
+    setSearchTerm(newSearchTerm);
+  };
+
+  const clearFilters = () => {
+    setStatusFilter('all');
+    setSearchTerm('');
+  };
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const getActiveFilterName = () => {
+    switch (statusFilter) {
+      case 'active': return 'Aktivni članovi';
+      case 'expiring': return 'Uskoro ističe';
+      case 'expired': return 'Istekli članovi';
+      default: return 'Svi članovi';
+    }
+  };
+
+  // Generate pagination numbers
+  const getPaginationNumbers = () => {
+    const delta = 2; // Show 2 pages before and after current
+    const range = [];
+    const rangeWithDots = [];
+
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+      range.push(i);
+    }
+
+    if (currentPage - delta > 2) {
+      rangeWithDots.push(1, '...');
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push('...', totalPages);
+    } else {
+      if (totalPages > 1) rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots;
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Članovi</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Članovi</h1>
+          {(statusFilter !== 'all' || searchTerm) && (
+            <p className="text-sm text-gray-600 mt-1">
+              {statusFilter !== 'all' && `Filter: ${getActiveFilterName()}`}
+              {statusFilter !== 'all' && searchTerm && ' • '}
+              {searchTerm && `Pretraga: "${searchTerm}"`}
+              {filteredMembers.length !== allMembers.length && (
+                <span className="ml-2 text-blue-600">
+                  ({filteredMembers.length} od {allMembers.length})
+                </span>
+              )}
+            </p>
+          )}
+        </div>
         <Link href="/members/new">
           <Button className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
@@ -155,13 +242,13 @@ export default function MembersPage() {
               <Input
                 placeholder="Pretraži članove..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchTermChange(e.target.value)}
                 className="pl-10"
               />
             </div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => handleStatusFilterChange(e.target.value)}
               className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">Svi članovi</option>
@@ -193,8 +280,21 @@ export default function MembersPage() {
         </div>
       </div>
 
+      {/* Clear Filters Button */}
+      {(statusFilter !== 'all' || searchTerm) && (
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            onClick={clearFilters}
+            className="text-sm"
+          >
+            Ukloni sve filtere
+          </Button>
+        </div>
+      )}
+
       {/* Members List */}
-      {loading && members.length === 0 ? (
+      {loading ? (
         <Card>
           <CardContent className="p-8 text-center">
             <p>⏳ Učitavanje članova...</p>
@@ -202,35 +302,74 @@ export default function MembersPage() {
         </Card>
       ) : (
         <>
-          <MemberList members={members} onMemberUpdate={handleMemberUpdate} />
+          {/* Results info */}
+          <div className="flex justify-between items-center text-sm text-gray-600">
+            <p>
+              Prikazano {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, filteredMembers.length)} od {filteredMembers.length} članova
+            </p>
+            {totalPages > 1 && (
+              <p>
+                Strana {currentPage} od {totalPages}
+              </p>
+            )}
+          </div>
 
-          {/* Load More Indicator */}
-          {loadingMore && (
-            <Card>
-              <CardContent className="p-4 text-center">
-                <p className="text-gray-500">⏳ Učitavanje dodatnih članova...</p>
-              </CardContent>
-            </Card>
-          )}
+          <MemberList members={paginatedMembers} onMemberUpdate={handleMemberUpdate} />
 
-          {/* Manual Load More Button (optional fallback) */}
-          {hasNext && !loadingMore && !loading && (
-            <div className="text-center">
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center space-x-2">
               <Button
                 variant="ghost"
-                onClick={loadMore}
-                className="w-full md:w-auto"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={!hasPrev}
+                className="px-3 py-2"
               >
-                Učitaj još članova
+                ← Prethodna
+              </Button>
+
+              <div className="flex space-x-1">
+                {getPaginationNumbers().map((page, index) => (
+                  <div key={index}>
+                    {page === '...' ? (
+                      <span className="px-3 py-2 text-gray-500">...</span>
+                    ) : (
+                      <Button
+                        variant={page === currentPage ? "primary" : "ghost"}
+                        onClick={() => goToPage(page as number)}
+                        className="px-3 py-2 min-w-[40px]"
+                        size="sm"
+                      >
+                        {page}
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                variant="ghost"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={!hasNext}
+                className="px-3 py-2"
+              >
+                Sledeća →
               </Button>
             </div>
           )}
 
-          {/* End of list indicator */}
-          {!hasNext && members.length > 0 && (
-            <div className="text-center py-4">
-              <p className="text-gray-500">✅ Svi članovi su učitani</p>
-            </div>
+          {/* No results message */}
+          {filteredMembers.length === 0 && !loading && (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <p className="text-gray-500">
+                  {searchTerm || statusFilter !== 'all'
+                    ? 'Nema članova koji odgovaraju kriterijumima pretrage.'
+                    : 'Nema registrovanih članova.'
+                  }
+                </p>
+              </CardContent>
+            </Card>
           )}
         </>
       )}
