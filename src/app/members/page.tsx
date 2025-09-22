@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Search, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -34,9 +33,6 @@ interface AllMembersResponse {
 }
 
 export default function MembersPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-
   const [allMembers, setAllMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,28 +45,13 @@ export default function MembersPage() {
     expired: 0
   });
 
-  const ITEMS_PER_PAGE = 50; // Show more items per page since we have all data
-
-  // Initialize from URL parameters
-  useEffect(() => {
-    const urlStatus = searchParams.get('status');
-    const urlSearch = searchParams.get('search');
-
-    if (urlStatus && ['active', 'expiring', 'expired'].includes(urlStatus)) {
-      setStatusFilter(urlStatus);
-    }
-
-    if (urlSearch) {
-      setSearchTerm(urlSearch);
-    }
-  }, [searchParams]);
+  const ITEMS_PER_PAGE = 50;
 
   // Fetch all members once
   const fetchAllMembers = async () => {
     try {
       setLoading(true);
 
-      // Fetch all members in one request (increase limit as needed)
       const response = await fetch(`/api/members?limit=10000`);
       const data: AllMembersResponse = await response.json();
 
@@ -125,30 +106,12 @@ export default function MembersPage() {
   const hasNext = currentPage < totalPages;
   const hasPrev = currentPage > 1;
 
-  // Update URL when filters change
-  const updateURL = (newStatusFilter: string, newSearchTerm: string) => {
-    const params = new URLSearchParams();
-
-    if (newStatusFilter !== 'all') {
-      params.set('status', newStatusFilter);
-    }
-
-    if (newSearchTerm.trim()) {
-      params.set('search', newSearchTerm);
-    }
-
-    const newURL = params.toString() ? `/members?${params.toString()}` : '/members';
-    router.replace(newURL, { scroll: false });
-  };
-
-  // Handle filter changes
+  // Handle filter changes - reset to first page
   useEffect(() => {
-    setCurrentPage(1); // Reset to first page when filters change
-    updateURL(statusFilter, searchTerm);
+    setCurrentPage(1);
   }, [statusFilter, searchTerm]);
 
   const handleMemberUpdate = () => {
-    // Refetch all data when a member is updated
     fetchAllMembers();
   };
 
@@ -167,7 +130,6 @@ export default function MembersPage() {
 
   const goToPage = (page: number) => {
     setCurrentPage(page);
-    // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -182,7 +144,7 @@ export default function MembersPage() {
 
   // Generate pagination numbers
   const getPaginationNumbers = () => {
-    const delta = 2; // Show 2 pages before and after current
+    const delta = 2;
     const range = [];
     const rangeWithDots = [];
 
