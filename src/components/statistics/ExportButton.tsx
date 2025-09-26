@@ -57,22 +57,37 @@ interface Member {
   membershipStatus: string;
 }
 
-interface ExportButtonProps {
-  className?: string;
-}
-
-export function ExportButton({ className = "w-full h-12 flex items-center gap-2" }: ExportButtonProps) {
+export function ExportCard() {
   const [isExporting, setIsExporting] = useState(false);
 
-  const fetchExportData = async () => {
+  const fetchExportData = async (): Promise<Member[]> => {
     try {
-      const response = await fetch('/api/members/export');
+      console.log('Fetching export data from /api/members/export');
+
+      const response = await fetch('/api/members/export', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        throw new Error('Failed to fetch export data');
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log('Fetched data:', data);
+
+      if (!Array.isArray(data)) {
+        throw new Error('Expected array of members, received: ' + typeof data);
+      }
+
+      return data;
     } catch (error) {
       console.error('Error fetching export data:', error);
       throw error;
@@ -197,11 +212,23 @@ export function ExportButton({ className = "w-full h-12 flex items-center gap-2"
   };
 
   const exportToExcel = async () => {
+    if (isExporting) return; // Prevent double clicks
+
     setIsExporting(true);
 
     try {
+      console.log('Starting export process...');
+
       const members: Member[] = await fetchExportData();
+      console.log(`Fetched ${members.length} members`);
+
+      if (members.length === 0) {
+        alert('Nema podataka za izvoz.');
+        return;
+      }
+
       const statistics = calculateStatistics(members);
+      console.log('Calculated statistics:', statistics);
 
       // Create workbook
       const workbook = XLSX.utils.book_new();
@@ -318,33 +345,53 @@ export function ExportButton({ className = "w-full h-12 flex items-center gap-2"
       const currentDate = new Date().toISOString().split('T')[0];
       const fileName = `GymPro_Izvoz_${currentDate}.xlsx`;
 
+      console.log('Writing file:', fileName);
+
       // Write and download file
       XLSX.writeFile(workbook, fileName);
 
+      console.log('Export completed successfully');
+
     } catch (error) {
       console.error('Export error:', error);
-      alert('Greška pri izvozu podataka. Pokušajte ponovo.');
+
+      // More detailed error message
+      let errorMessage = 'Greška pri izvozu podataka.';
+      if (error instanceof Error) {
+        errorMessage += ` Detalji: ${error.message}`;
+      }
+
+      alert(errorMessage + ' Proverite konzolu za više informacija.');
     } finally {
       setIsExporting(false);
     }
   };
 
   return (
-    <button
-      onClick={exportToExcel}
-      disabled={isExporting}
-      className={`${className} justify-center`}
-    >
-      {isExporting ? (
-        <>
-          <Loader2 className="w-5 h-5 animate-spin" />
-          Download u toku...
-        </>
-      ) : (
-        <>
-          Skini statistiku
-        </>
-      )}
-    </button>
+    <div className="group block cursor-pointer">
+      <div
+        className={`relative bg-gray-50 rounded-2xl p-8 text-center transition-all duration-300 hover:bg-white hover:shadow-lg hover:scale-105 border border-gray-100 hover:border-gray-200 ${isExporting ? 'opacity-75 cursor-wait' : 'cursor-pointer'
+          }`}
+        onClick={exportToExcel}
+      >
+        <div className="w-16 h-16 mx-auto mb-6 bg-purple-100 rounded-2xl flex items-center justify-center group-hover:bg-purple-500 transition-colors duration-300">
+          {isExporting ? (
+            <Loader2 className="w-8 h-8 text-purple-600 group-hover:text-white transition-colors duration-300 animate-spin" />
+          ) : (
+            <FileDown className="w-8 h-8 text-purple-600 group-hover:text-white transition-colors duration-300" />
+          )}
+        </div>
+        <h3 className="font-semibold text-slate-900 mb-2">Export</h3>
+        <div className="mt-4">
+          <div className="w-full h-12 flex items-center justify-center gap-2 text-purple-600 font-medium">
+            {isExporting ? (
+              <span>Download u toku...</span>
+            ) : (
+              <span>Skini statistiku</span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

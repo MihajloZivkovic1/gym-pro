@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Plus, Mail, FileDown, Zap, Activity, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import { ExportButton } from '@/components/statistics/ExportButton';
+import { ExportCard } from '@/components/statistics/ExportButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,18 +95,9 @@ export default async function Dashboard() {
               </div>
             </Link>
 
-            {/* Export Card */}
-            <div className="group block cursor-pointer">
-              <div className="relative bg-gray-50 rounded-2xl p-8 text-center transition-all duration-300 hover:bg-white hover:shadow-lg hover:scale-105 border border-gray-100 hover:border-gray-200">
-                <div className="w-16 h-16 mx-auto mb-6 bg-purple-100 rounded-2xl flex items-center justify-center group-hover:bg-purple-500 transition-colors duration-300">
-                  <FileDown className="w-8 h-8 text-purple-600 group-hover:text-white transition-colors duration-300" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-2">Export</h3>
-                <div className="mt-4">
-                  <ExportButton className="w-full" />
-                </div>
-              </div>
-            </div>
+
+            <ExportCard />
+
 
           </div>
         </CardContent>
