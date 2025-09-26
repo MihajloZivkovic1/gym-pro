@@ -368,9 +368,9 @@ export function ExportCard() {
   };
 
   return (
-    <div className="group block cursor-pointer">
+    <div className="group block cursor-pointer h-full">
       <div
-        className={`relative bg-gray-50 rounded-2xl p-8 text-center transition-all duration-300 hover:bg-white hover:shadow-lg hover:scale-105 border border-gray-100 hover:border-gray-200 ${isExporting ? 'opacity-75 cursor-wait' : 'cursor-pointer'
+        className={`relative bg-gray-50 rounded-2xl p-8 text-center transition-all duration-300 hover:bg-white hover:shadow-lg hover:scale-105 border border-gray-100 hover:border-gray-200 h-full ${isExporting ? 'opacity-75 cursor-wait' : 'cursor-pointer'
           }`}
         onClick={exportToExcel}
       >
@@ -382,15 +382,9 @@ export function ExportCard() {
           )}
         </div>
         <h3 className="font-semibold text-slate-900 mb-2">Export</h3>
-        <div className="mt-4">
-          <div className="w-full h-12 flex items-center justify-center gap-2 text-purple-600 font-medium">
-            {isExporting ? (
-              <span>Download u toku...</span>
-            ) : (
-              <span>Skini statistiku</span>
-            )}
-          </div>
-        </div>
+        <p className="text-sm text-slate-600">
+          {isExporting ? 'Download u toku...' : 'Skini statistiku'}
+        </p>
       </div>
     </div>
   );
