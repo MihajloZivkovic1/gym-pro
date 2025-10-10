@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, BarChart3, Bell, Menu, X, Newspaper } from 'lucide-react';
+import { Users, BarChart3, Bell, Menu, X, Newspaper, BadgeCheck } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image'
 export function Header() {
@@ -13,6 +13,7 @@ export function Header() {
     { name: 'Dashboard', href: '/', icon: BarChart3 },
     { name: 'Članovi', href: '/members', icon: Users },
     { name: 'Obavestenja', href: '/newsletters', icon: Newspaper },
+    { name: 'Planovi Članarine', href: '/membership-plans', icon: BadgeCheck },
   ];
 
   const toggleMobileMenu = () => {

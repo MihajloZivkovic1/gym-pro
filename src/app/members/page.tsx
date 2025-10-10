@@ -94,7 +94,7 @@ export default function MembersPage() {
     return filtered;
   }, [allMembers, statusFilter, searchTerm]);
 
-  // Client-side pagination
+  // Client-side pagination`
   const paginatedMembers = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;

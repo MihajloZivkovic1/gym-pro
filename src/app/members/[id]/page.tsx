@@ -163,9 +163,6 @@ export default async function MemberProfilePage({ params }: PageProps) {
         {/* Payment History */}
         <PaymentHistory payments={payments} />
       </div>
-
-      {/* Notification History */}
-      <NotificationHistory notifications={notifications} />
     </div>
   );
 }

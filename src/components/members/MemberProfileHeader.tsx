@@ -56,24 +56,6 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
     );
   };
 
-  const handleSendReminder = async () => {
-    try {
-      const response = await fetch(`/api/members/${member.id}/send-reminder`, {
-        method: 'POST'
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        alert('Podsetek je uspešno poslat!');
-      } else {
-        alert(result.error || 'Greška pri slanju podsetka');
-      }
-    } catch (error) {
-      alert('Greška pri komunikaciji sa serverom');
-    }
-  };
-
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
   };
@@ -200,15 +182,6 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
                   Naplati članarinu
                 </Button>
               )}
-
-              <Button
-                onClick={handleSendReminder}
-                variant="secondary"
-                className="w-full flex items-center gap-2"
-              >
-                <Mail className="w-4 h-4" />
-                Pošalji podsetek
-              </Button>
 
               <Button
                 variant="danger"

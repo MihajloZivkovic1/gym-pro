@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { ArrowLeft, CreditCard, Banknote, Mail, Bell } from 'lucide-react';
+import { ArrowLeft, CreditCard, Banknote, Mail } from 'lucide-react';
 import Link from 'next/link';
 
 interface MembershipPlan {
@@ -13,6 +13,7 @@ interface MembershipPlan {
   name: string;
   price: number;
   durationMonths: number;
+  isActive: boolean;
 }
 
 export default function AddMemberPage() {
@@ -61,12 +62,15 @@ export default function AddMemberPage() {
 
   const fetchPlans = async () => {
     try {
-      const response = await fetch('/api/membership-plans');
+      const response = await fetch('/api/membership-plans?isActive=true');
       const data = await response.json();
-      if (data.plans) {
-        setPlans(data.plans);
-        if (data.plans.length > 0) {
-          const firstPlan = data.plans[0];
+
+      if (data.success && data.data) {
+        const activePlans = data.data.filter((plan: MembershipPlan) => plan.isActive);
+        setPlans(activePlans);
+
+        if (activePlans.length > 0) {
+          const firstPlan = activePlans[0];
           setFormData(prev => ({
             ...prev,
             planId: firstPlan.id,
@@ -77,6 +81,7 @@ export default function AddMemberPage() {
       }
     } catch (error) {
       console.error('Error fetching plans:', error);
+      alert('Greška pri učitavanju planova članarine');
     }
   };
 
@@ -98,6 +103,12 @@ export default function AddMemberPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!selectedPlan) {
+      alert('Molimo izaberite plan članarine');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -127,7 +138,7 @@ export default function AddMemberPage() {
             paymentMethod: formData.paymentMethod,
             monthsPaid: formData.monthsPaid,
             notes: formData.paymentNotes || null,
-            paymentDate: formData.membershipStart // Payment date same as membership start
+            paymentDate: formData.membershipStart
           }
         })
       });
@@ -141,7 +152,7 @@ export default function AddMemberPage() {
         alert(result.error || 'Greška pri dodavanju člana');
       }
     } catch (error) {
-      console.log('Greška pri komunikaciji sa serverom', error);
+      console.error('Greška pri komunikaciji sa serverom', error);
       alert('Greška pri komunikaciji sa serverom');
     } finally {
       setLoading(false);
@@ -151,7 +162,8 @@ export default function AddMemberPage() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('sr-RS', {
       style: 'currency',
-      currency: 'RSD'
+      currency: 'RSD',
+      minimumFractionDigits: 0
     }).format(amount);
   };
 
@@ -229,10 +241,9 @@ export default function AddMemberPage() {
                     </p>
                   </div>
                 </label>
-
               </div>
 
-              {(!formData.subscribeToNewsletter) && (
+              {!formData.subscribeToNewsletter && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                   <p className="text-sm text-yellow-800">
                     ⚠️ Član neće primati nikakva obaveštenja. Možete ovo promeniti kasnije u profilu člana.
@@ -257,7 +268,7 @@ export default function AddMemberPage() {
               required
             />
 
-            {plans.length > 0 && (
+            {plans.length > 0 ? (
               <div className="space-y-1">
                 <label className="block text-sm font-medium text-gray-700">
                   Plan članarine
@@ -280,6 +291,12 @@ export default function AddMemberPage() {
                   </p>
                 )}
               </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ Nema aktivnih planova članarine. Kreirajte plan pre dodavanja člana.
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -293,38 +310,21 @@ export default function AddMemberPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Broj meseci unapred
-                </label>
-                <select
-                  value={formData.monthsPaid}
-                  onChange={(e) => handleMonthsPaidChange(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value={1}>1 mesec</option>
-                  <option value={2}>2 meseca</option>
-                  <option value={3}>3 meseca</option>
-                  <option value={6}>6 meseci</option>
-                  <option value={12}>12 meseci</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Način plaćanja
-                </label>
-                <select
-                  value={formData.paymentMethod}
-                  onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="cash">💰 Keš</option>
-                  <option value="card">💳 Kartica</option>
-                  <option value="bank_transfer">🏦 Prenos</option>
-                </select>
-              </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Broj meseci unapred
+              </label>
+              <select
+                value={formData.monthsPaid}
+                onChange={(e) => handleMonthsPaidChange(parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value={1}>1 mesec</option>
+                <option value={2}>2 meseca</option>
+                <option value={3}>3 meseca</option>
+                <option value={6}>6 meseci</option>
+                <option value={12}>12 meseci</option>
+              </select>
             </div>
 
             <div className="space-y-1">
@@ -383,11 +383,7 @@ export default function AddMemberPage() {
                 </div>
                 <div className="flex justify-between">
                   <span>Način plaćanja:</span>
-                  <span>
-                    {formData.paymentMethod === 'cash' && '💰 Keš'}
-                    {formData.paymentMethod === 'card' && '💳 Kartica'}
-                    {formData.paymentMethod === 'bank_transfer' && '🏦 Prenos'}
-                  </span>
+                  <span>💰 Keš</span>
                 </div>
                 <div className="flex justify-between font-semibold pt-2 border-t border-blue-200">
                   <span>Ukupno:</span>
@@ -408,7 +404,7 @@ export default function AddMemberPage() {
           <Button
             type="submit"
             className="flex-1"
-            disabled={loading}
+            disabled={loading || plans.length === 0}
           >
             {loading ? '⏳ Dodavanje...' : 'Dodaj člana i zabeleži plaćanje'}
           </Button>
