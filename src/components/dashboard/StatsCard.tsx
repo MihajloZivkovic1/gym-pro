@@ -62,7 +62,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
 
 
         return (
-          <Link key={index} href="/admin/members" className="block">
+          <Link key={index} href="/members" className="block">
             <Card className={`group border ${card.borderColor} hover:shadow-lg transition-all duration-200 hover:scale-[1.02] bg-white cursor-pointer`}>
               <CardContent className="p-6">
                 {/* Header */}
