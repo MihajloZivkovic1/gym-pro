@@ -43,7 +43,7 @@ export default function GymLandingPage() {
             onClick={handleLogin}
             className="px-10 py-4 bg-orange-500 hover:bg-orange-600 text-white text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
           >
-            Access Your Account
+            Access Your Account.
           </button>
         </div>
       </main>
