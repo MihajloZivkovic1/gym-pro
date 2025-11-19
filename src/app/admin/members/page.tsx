@@ -187,7 +187,7 @@ export default function MembersPage() {
             </p>
           )}
         </div>
-        <Link href="/members/new">
+        <Link href="/admin/members/new">
           <Button className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
             Dodaj člana
