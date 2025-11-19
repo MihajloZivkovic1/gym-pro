@@ -5,6 +5,7 @@ import { MemberProfileHeader } from '@/components/members/MemberProfileHeader';
 import { MembershipStatus } from '@/components/members/MembershipStatus';
 import { MembershipHistory } from '@/components/members/MembershipHistory';
 import { PaymentHistory } from '@/components/members/PaymentHistory';
+import { NotificationHistory } from '@/components/members/NotificationHistory';
 
 async function getMemberData(id: string) {
   try {
@@ -73,8 +74,7 @@ async function getMemberData(id: string) {
         totalCheckIns,
         memberSince: member.createdAt,
         totalMemberships: member.memberships.length
-      },
-      role: member.role
+      }
     };
 
     // Transform memberships for MembershipHistory
@@ -148,7 +148,6 @@ export default async function MemberProfilePage({ params }: PageProps) {
 
   const { member, memberships, payments, notifications } = data;
 
-  console.log(member);
   return (
     <div className="space-y-6">
       {/* Member Header */}

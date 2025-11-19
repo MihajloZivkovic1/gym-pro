@@ -147,7 +147,7 @@ export default function AddMemberPage() {
 
       if (result.success) {
         alert('Član je uspešno dodat i prvo plaćanje je zabeleženo!');
-        router.push('/admin/members');
+        router.push('/members');
       } else {
         alert(result.error || 'Greška pri dodavanju člana');
       }
@@ -170,7 +170,7 @@ export default function AddMemberPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/admin/members">
+        <Link href="/members">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="w-4 h-4" />
           </Button>
@@ -396,7 +396,7 @@ export default function AddMemberPage() {
 
         {/* Submit Buttons */}
         <div className="flex gap-4">
-          <Link href="/admin/members" className="flex-1">
+          <Link href="/members" className="flex-1">
             <Button variant="secondary" className="w-full">
               Otkaži
             </Button>
