@@ -1,7 +1,11 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { memberSchema } from '@/lib/validation';
 import { calculateMembershipStatus } from '@/lib/utils';
+import bcrypt from 'bcryptjs';
+import { UserRole } from '@prisma/client';
+import { sendWelcomeEmail } from '@/lib/email';
 
 export async function GET(request: NextRequest) {
   try {
@@ -157,6 +161,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    function generateRandomPassword(): string {
+      return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    // Generate registration credentials
+    const randomPassword = generateRandomPassword();
+    const hashedPassword = await bcrypt.hash(randomPassword, 12);
+
     // Calculate membership end date based on months paid
     const startDate = new Date(membershipStart);
     const endDate = new Date(startDate);
@@ -168,19 +180,35 @@ export async function POST(request: NextRequest) {
 
     // Use transaction to create user, membership, and payment atomically
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Create the user
+      // 1. Create the user with registration credentials
       const newUser = await tx.user.create({
         data: {
           firstName,
           lastName,
           email,
           phone: phone || null,
+          password: hashedPassword,
+          role: UserRole.MEMBER,
+          isActive: true,
+          qrCode: '', // Will be updated after we get the ID
           subscribeToNewsletter: subscribeToNewsletter ?? true,
-          subscribeToNotifications: false
+          subscribeToNotifications: subscribeToNotifications ?? false
         }
       });
 
-      // 2. Create the membership
+      // 2. Update user with proper QR code (api_base_url/members/id)
+      const apiBaseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000';
+      const qrCodeUrl = `${apiBaseUrl}/members/${newUser.id}`;
+
+      await tx.user.update({
+        where: { id: newUser.id },
+        data: { qrCode: qrCodeUrl }
+      });
+
+      console.log("User", newUser);
+      console.log("User id:", newUser.id);
+
+      // 3. Create the membership
       const newMembership = await tx.membership.create({
         data: {
           userId: newUser.id,
@@ -194,7 +222,9 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      // 3. Create the payment record
+      console.log("Membership:", newMembership);
+
+      // 4. Create the payment record
       const newPayment = await tx.payment.create({
         data: {
           membershipId: newMembership.id,
@@ -204,24 +234,65 @@ export async function POST(request: NextRequest) {
           paymentMethod: payment.paymentMethod,
           monthsPaid: payment.monthsPaid,
           notes: payment.notes || null,
-          processedBy: 'system' // You can change this to actual user ID if you have auth
+          processedBy: newUser.id // You can change this to actual admin user ID if you have auth
         }
       });
 
+      console.log(newPayment);
       return {
-        user: newUser,
+        user: { ...newUser, qrCode: qrCodeUrl },
         membership: newMembership,
-        payment: newPayment
+        payment: newPayment,
+        loginCredentials: {
+          email: newUser.email,
+          password: randomPassword // Return plain password for admin to give to user
+        }
       };
     });
 
+    // 5. Send welcome email with credentials (after successful transaction)
+    try {
+      const welcomeEmailData = {
+        user: {
+          id: result.user.id,
+          firstName: result.user.firstName,
+          lastName: result.user.lastName,
+          email: result.user.email,
+          qrCode: result.user.qrCode
+        },
+        membership: {
+          startDate: result.membership.startDate,
+          endDate: result.membership.endDate,
+          planId: result.membership.planId
+        },
+        loginCredentials: result.loginCredentials,
+        membershipPlan: {
+          name: membershipPlan.name,
+          price: membershipPlan.price?.toNumber() || 0 // Safe conversion with fallback
+        }
+      };
+
+      const emailSent = await sendWelcomeEmail(welcomeEmailData);
+
+      if (emailSent) {
+        console.log(`Welcome email sent successfully to ${result.user.email}`);
+      } else {
+        console.error(`Failed to send welcome email to ${result.user.email}`);
+        // Note: We don't fail the entire operation if email fails
+      }
+    } catch (emailError) {
+      console.error('Error sending welcome email:', emailError);
+      // Continue with success response even if email fails
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Član je uspešno kreiran sa prvim plaćanjem',
+      message: 'Član je uspešno kreiran sa prvim plaćanjem i pristupnim podacima. Email sa instrukcijama je poslat.',
       data: {
         user: result.user,
         membership: result.membership,
-        payment: result.payment
+        payment: result.payment,
+        loginCredentials: result.loginCredentials
       }
     });
 

@@ -102,7 +102,7 @@ export default function EditMemberPage({ params }: EditMemberPageProps) {
       const result = await response.json();
 
       if (result.success) {
-        router.push('/members');
+        router.push('/admin/members');
       } else {
         throw new Error(result.error || 'Failed to update member');
       }
@@ -134,7 +134,7 @@ export default function EditMemberPage({ params }: EditMemberPageProps) {
       const result = await response.json();
 
       if (result.success) {
-        router.push('/members');
+        router.push('/admin/members');
       } else {
         throw new Error(result.error || 'Failed to delete member');
       }
@@ -170,7 +170,7 @@ export default function EditMemberPage({ params }: EditMemberPageProps) {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Član nije pronađen</h1>
           <Link
-            href="/members"
+            href="/admin/members"
             className="text-blue-600 hover:text-blue-700 font-medium"
           >
             Nazad na listu članova
@@ -187,7 +187,7 @@ export default function EditMemberPage({ params }: EditMemberPageProps) {
           {/* Header */}
           <div className="mb-8">
             <Link
-              href="/members"
+              href="/admin/members"
               className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -304,7 +304,7 @@ export default function EditMemberPage({ params }: EditMemberPageProps) {
 
                 <div className="flex gap-3">
                   <Link
-                    href="/members"
+                    href="/admin/members"
                     className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
                   >
                     Otkaži

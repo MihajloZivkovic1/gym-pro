@@ -16,17 +16,22 @@ model User {
   phone     String?
   firstName String   @map("first_name")
   lastName  String   @map("last_name")
+  password  String?  // Add password field for authentication (nullable temporarily)
+  role      UserRole @default(MEMBER)
+  isActive  Boolean  @default(true) @map("is_active")
+  qrCode    String?  @unique @map("qr_code") // Unique QR code for gym entry
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   
-  //subscriptions
+  // subscriptions
   subscribeToNewsletter     Boolean @default(true) @map("subscribe_to_newsletter")
   subscribeToNotifications  Boolean @default(false) @map("subscribe_to_notifications")
 
   // Relations
-  memberships   Membership[]
-  notifications Notification[]
-  payments      Payment[]
+  memberships       Membership[]
+  notifications     Notification[]
+  payments          Payment[]
+  processedPayments Payment[]    @relation("PaymentProcessor") // Payments processed by this admin
 
   @@map("users")
 }
@@ -37,6 +42,7 @@ model MembershipPlan {
   price          Decimal  @db.Decimal(10, 2)
   durationMonths Int      @map("duration_months")
   isActive       Boolean  @default(true) @map("is_active")
+  description    String?  // Add description for the plan
   createdAt      DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -76,12 +82,13 @@ model Payment {
   paymentMethod String   @default("cash") @map("payment_method")
   monthsPaid    Int      @default(1) @map("months_paid")
   notes         String?
-  processedBy   String?  @map("processed_by")
+  processedBy   String?  @map("processed_by") @db.Uuid // Reference to admin user who processed payment
   createdAt     DateTime @default(now()) @map("created_at")
 
   // Relations
   membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  processor  User?      @relation("PaymentProcessor", fields: [processedBy], references: [id])
 
   @@map("payments")
 }
@@ -120,6 +127,14 @@ model Newsletter {
   updatedAt     DateTime          @updatedAt @map("updated_at")
 
   @@map("newsletters")
+}
+
+enum UserRole {
+  ADMIN    // Full access - gym owner/manager
+  STAFF    // Limited admin access - can check people in, view members
+  MEMBER   // Standard gym member - view own info only
+
+  @@map("user_role")
 }
 
 enum MembershipStatus {

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { ArrowLeft, Edit, Mail, CreditCard, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -26,15 +27,20 @@ interface MemberProfileHeaderProps {
       totalCheckIns: number;
       memberSince: Date;
       totalMemberships: number;
-    };
+    }
+    role: string
   };
 }
 
 export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Get current user's role from session
+  const currentUserRole = session?.user?.role;
 
   const getStatusBadge = (status: string) => {
     const styles = {
@@ -96,11 +102,14 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
   return (
     <>
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/members">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-        </Link>
+        {currentUserRole !== "MEMBER" && (
+          <Link href="/admin/members">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          </Link>
+        )}
+
         <h1 className="text-3xl font-bold text-gray-900">
           {member.firstName} {member.lastName}
         </h1>
@@ -137,20 +146,10 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
               </div>
 
               {/* Member Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200">
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-200">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-blue-600">{member.stats.totalMemberships}</p>
                   <p className="text-sm text-gray-500">Ukupno članarina</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-green-600">
-                    {new Intl.NumberFormat('sr-RS').format(member.stats.totalPayments)}
-                  </p>
-                  <p className="text-sm text-gray-500">Ukupno plaćeno (RSD)</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-purple-600">{member.stats.totalCheckIns}</p>
-                  <p className="text-sm text-gray-500">Dolasci u teretanu</p>
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-bold text-orange-600">
@@ -165,14 +164,15 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Akcije</h3>
 
-              <Link href={`/members/${member.id}/edit`} className="block">
+              <Link href={`/admin/members/${member.id}/edit`} className="block">
                 <Button className="w-full flex items-center gap-2">
                   <Edit className="w-4 h-4" />
                   Uredi podatke
                 </Button>
               </Link>
 
-              {member.activeMembership && (
+              {/* FIXED: Check current user's role, not the member being viewed */}
+              {member.activeMembership && currentUserRole !== 'MEMBER' && (
                 <Button
                   onClick={() => setShowPaymentModal(true)}
                   variant="secondary"

@@ -133,7 +133,7 @@ export function MemberList({ members, onMemberUpdate }: MemberListProps) {
                     <div className="space-y-2">
                       <p className="text-lg">👥</p>
                       <p>Nema članova za prikaz</p>
-                      <Link href="/members/new">
+                      <Link href="/admin/members/new">
                         <Button size="sm">Dodaj prvog člana</Button>
                       </Link>
                     </div>
@@ -183,13 +183,13 @@ export function MemberList({ members, onMemberUpdate }: MemberListProps) {
 
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
-                        <Link href={`/members/${member.id}`}>
+                        <Link href={`/admin/members/${member.id}`}>
                           <Button variant="ghost" size="sm">
                             <Eye className="w-4 h-4" />
                           </Button>
                         </Link>
 
-                        <Link href={`/members/${member.id}/edit`}>
+                        <Link href={`/admin/members/${member.id}/edit`}>
                           <Button variant="ghost" size="sm">
                             <Edit className="w-4 h-4" />
                           </Button>

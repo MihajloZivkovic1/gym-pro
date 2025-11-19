@@ -9,6 +9,7 @@ const paymentSchema = z.object({
   notes: z.string().optional(),
   processedBy: z.string().default('admin')
 });
+const uuidSchema = z.string().uuid('Nevažeći ID korisnika');
 
 export async function POST(
   request: NextRequest,
@@ -18,6 +19,7 @@ export async function POST(
     // Await params since it's now a Promise
     const { id: userId } = await params;
     const body = await request.json();
+
 
     // Validate input
     const validatedData = paymentSchema.parse(body);
@@ -125,6 +127,13 @@ export async function POST(
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Neispravni podaci', details: error },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Nevažeći ID korisnika' },
         { status: 400 }
       );
     }
