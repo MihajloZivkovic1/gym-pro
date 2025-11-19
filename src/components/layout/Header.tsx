@@ -10,10 +10,10 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: BarChart3 },
-    { name: 'Članovi', href: '/admin/members', icon: Users },
-    { name: 'Obavestenja', href: '/admin/newsletters', icon: Newspaper },
-    { name: 'Planovi Članarine', href: '/admin/membership-plans', icon: BadgeCheck },
+    { name: 'Dashboard', href: '/', icon: BarChart3 },
+    { name: 'Članovi', href: '/members', icon: Users },
+    { name: 'Obavestenja', href: '/newsletters', icon: Newspaper },
+    { name: 'Planovi Članarine', href: '/membership-plans', icon: BadgeCheck },
   ];
 
   const toggleMobileMenu = () => {

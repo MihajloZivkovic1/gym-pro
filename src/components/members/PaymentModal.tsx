@@ -32,7 +32,7 @@ export function PaymentModal({ member, onClose, onSuccess }: PaymentModalProps) 
     paymentMethod: 'cash' as 'cash' | 'card' | 'bank_transfer',
     monthsPaid: 1,
     notes: '',
-    processedBy: member.id
+    processedBy: 'admin'
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -100,7 +100,6 @@ export function PaymentModal({ member, onClose, onSuccess }: PaymentModalProps) 
 
     setIsSubmitting(true);
 
-    console.log(member.id)
     try {
       const response = await fetch(`/api/members/${member.id}/pay`, {
         method: 'POST',
