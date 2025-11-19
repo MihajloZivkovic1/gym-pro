@@ -1,7 +1,11 @@
+// app/layout.tsx
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/layout/Header';
+import Providers from './providers';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -10,11 +14,14 @@ export const metadata: Metadata = {
   description: 'Professional gym management system for tracking memberships and payments',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.role === "ADMIN";
+
   return (
     <html lang="sr">
       <head>
@@ -33,12 +40,22 @@ export default function RootLayout({
 
       <body className={inter.className}>
         <div className="min-h-screen bg-gray-50">
-          <Header />
+          {/* Only show Header for ADMIN users */}
+          {isAdmin && <Header />}
+
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {children}
+            <Providers>
+              {children}
+            </Providers>
           </main>
         </div>
       </body>
     </html>
   );
 }
+
+
+//kopija stanice members/[id] za usere
+//izbaciti im dugmice za placanje tu
+//dodati sve u admina
+// "/" ovu stranicu smisliti sta sa njom

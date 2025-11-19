@@ -152,7 +152,7 @@ export function SwipeableCards({ expiringMemberships, expiredMemberships }: Swip
                       </div>
                     </div>
                   </div>
-                  <Link href={`/members/${membership.user.id}`}>
+                  <Link href={`/admin/members/${membership.user.id}`}>
                     <Button size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-amber-500 hover:bg-amber-600 text-white">
                       Pogledaj
                     </Button>
@@ -229,7 +229,7 @@ export function SwipeableCards({ expiringMemberships, expiredMemberships }: Swip
                       )}
                     </div>
                   </div>
-                  <Link href={`/members/${membership.user.id}`}>
+                  <Link href={`/admin/members/${membership.user.id}`}>
                     <Button size="sm" variant="primary" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 border-red-200 text-red-600 hover:bg-red-50">
                       Obnovi
                     </Button>
@@ -258,7 +258,7 @@ export function SwipeableCards({ expiringMemberships, expiredMemberships }: Swip
           {/* Quick action to view all expired members */}
           {expiredMemberships.length > 0 && (
             <div className="mt-4 pt-3 border-t border-slate-200">
-              <Link href="/members?status=expired">
+              <Link href="/admin/members?status=expired">
                 <Button variant="ghost" size="sm" className="w-full text-red-600 hover:text-red-700 hover:bg-red-50">
                   <span>Prikaži sve istekle članarine</span>
                   <ArrowRight className="w-4 h-4 ml-1" />
