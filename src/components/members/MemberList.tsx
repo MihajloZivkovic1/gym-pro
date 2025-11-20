@@ -14,6 +14,7 @@ interface Member {
   lastName: string;
   email: string;
   phone?: string;
+  role?: string; // Add this if not present
   membershipStatus: 'active' | 'expiring' | 'expired';
   activeMembership?: {
     id: string;
@@ -32,17 +33,19 @@ export function MemberList({ members, onMemberUpdate }: MemberListProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<{ id: string; name: string } | null>(null);
 
-  // Remove duplicates and ensure unique keys
+  // Remove duplicates, filter out admins, and ensure unique keys
   const uniqueMembers = useMemo(() => {
     const seen = new Set();
-    return members.filter(member => {
-      if (seen.has(member.id)) {
-        console.warn(`Duplicate member found with ID: ${member.id}`);
-        return false;
-      }
-      seen.add(member.id);
-      return true;
-    });
+    return members
+      .filter(member => member.role !== 'ADMIN') // Filter out admins
+      .filter(member => {
+        if (seen.has(member.id)) {
+          console.warn(`Duplicate member found with ID: ${member.id}`);
+          return false;
+        }
+        seen.add(member.id);
+        return true;
+      });
   }, [members]);
 
   const handleDeleteClick = (memberId: string, memberName: string) => {
@@ -64,7 +67,6 @@ export function MemberList({ members, onMemberUpdate }: MemberListProps) {
         onMemberUpdate();
         setShowDeleteModal(false);
         setMemberToDelete(null);
-        // You could add a toast notification here instead of alert
       } else {
         alert('Greška pri brisanju člana');
       }
@@ -195,7 +197,6 @@ export function MemberList({ members, onMemberUpdate }: MemberListProps) {
                           </Button>
                         </Link>
 
-                        {/* Payment Button - prikaži ZA SVE članove koji imaju membership (aktivan ili istekao) */}
                         {(member.activeMembership || member.membershipStatus === 'expired') && (
                           <PaymentButton
                             member={member}
@@ -225,7 +226,6 @@ export function MemberList({ members, onMemberUpdate }: MemberListProps) {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
       {memberToDelete && (
         <DeleteModal
           isOpen={showDeleteModal}
