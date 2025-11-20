@@ -6,6 +6,11 @@ export async function GET() {
   try {
     // Fetch all members with their memberships
     const members = await prisma.user.findMany({
+      where: {
+        role: {
+          not: "ADMIN"
+        }
+      },
       include: {
         memberships: {
           where: { status: 'ACTIVE' },
@@ -65,6 +70,13 @@ export async function GET() {
       where: {
         createdAt: {
           gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+        },
+        membership: {
+          user: {
+            role: {
+              not: 'ADMIN'
+            }
+          }
         }
       },
       include: {
@@ -96,6 +108,9 @@ export async function GET() {
       where: {
         createdAt: {
           gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+        },
+        role: {
+          not: 'ADMIN' // Exclude new admin accounts
         }
       },
       include: {
@@ -133,6 +148,11 @@ export async function GET() {
         endDate: {
           gte: startDate,
           lte: endDate
+        },
+        user: {
+          role: {
+            not: 'ADMIN' // Exclude admin memberships
+          }
         }
       },
       include: {
@@ -176,6 +196,11 @@ export async function GET() {
         endDate: {
           lte: thirtyDaysFromNow,
           gte: new Date() // Only future expirations
+        },
+        user: {
+          role: {
+            not: 'ADMIN' // Exclude admin memberships
+          }
         }
       },
       include: {
@@ -196,6 +221,11 @@ export async function GET() {
         endDate: {
           lt: new Date(), // Already expired
           gte: thirtyDaysAgo // But not too old (last 30 days)
+        },
+        user: {
+          role: {
+            not: 'ADMIN' // Exclude admin memberships
+          }
         }
       },
       include: {
@@ -213,6 +243,9 @@ export async function GET() {
           none: {
             status: 'ACTIVE'
           }
+        },
+        role: {
+          not: 'ADMIN' // Exclude admins
         }
       },
       include: {

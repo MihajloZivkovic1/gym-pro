@@ -14,6 +14,7 @@ interface Member {
   lastName: string;
   email: string;
   phone?: string;
+  role?: string; // Add role field
   membershipStatus: 'active' | 'expiring' | 'expired';
   activeMembership?: {
     id: string;
@@ -56,8 +57,18 @@ export default function MembersPage() {
       const data: AllMembersResponse = await response.json();
 
       if (data.members) {
-        setAllMembers(data.members);
-        setStats(data.stats);
+        // Filter out admins
+        const nonAdminMembers = data.members.filter(member => member.role !== 'ADMIN');
+        setAllMembers(nonAdminMembers);
+
+        // Recalculate stats excluding admins
+        const recalculatedStats = {
+          total: nonAdminMembers.length,
+          active: nonAdminMembers.filter(m => m.membershipStatus === 'active').length,
+          expiring: nonAdminMembers.filter(m => m.membershipStatus === 'expiring').length,
+          expired: nonAdminMembers.filter(m => m.membershipStatus === 'expired').length,
+        };
+        setStats(recalculatedStats);
       }
     } catch (error) {
       console.error('Error fetching members:', error);
@@ -94,7 +105,7 @@ export default function MembersPage() {
     return filtered;
   }, [allMembers, statusFilter, searchTerm]);
 
-  // Client-side pagination`
+  // Client-side pagination
   const paginatedMembers = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;

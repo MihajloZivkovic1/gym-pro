@@ -33,18 +33,6 @@ export type WelcomeEmailData = {
   };
 };
 
-// const transporter = nodemailer.createTransport({
-//   host: "smtpout.secureserver.net",
-//   port: 465,
-//   secure: true,
-//   auth: {
-//     user: "podelitrenutak@podelitrenutak.com",
-//     pass: "Twistedfate123"
-//   },
-//   logger: true,
-//   debug: true
-// });
-
 export const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtpout.secureserver.net",
   port: parseInt(process.env.SMTP_PORT || '465'),
@@ -59,11 +47,16 @@ export const transporter = nodemailer.createTransport({
 
 export async function sendNewsletterEmails(newsletterId: string): Promise<void> {
   try {
+    // Fetch only non-admin users who are subscribed to notifications
     const users = await prisma.user.findMany({
-      where: { subscribeToNotifications: true },
+      where: {
+        subscribeToNotifications: true,
+        role: {
+          not: 'ADMIN' // Exclude admins from newsletters
+        }
+      },
       select: { id: true, email: true, firstName: true, lastName: true }
     });
-
 
     console.log("UKUPNO KORISNIKA KOJIMA SE SALJE MEJL", users);
     const newsletter = await prisma.newsletter.findUnique({
@@ -96,7 +89,7 @@ export async function sendNewsletterEmails(newsletterId: string): Promise<void> 
 
     console.log(`Email sending completed: ${successful} successful, ${failed} failed`);
 
-
+    // Create notifications only for non-admin users
     const notificationPromises = users.map(user =>
       prisma.notification.create({
         data: {
@@ -481,4 +474,3 @@ export async function sendSingleEmail(
     return false;
   }
 }
-

@@ -8,7 +8,14 @@ export async function GET() {
       orderBy: { createdAt: 'desc' }
     });
 
-    const totalMembers = await prisma.user.count();
+    // Count only non-admin members
+    const totalMembers = await prisma.user.count({
+      where: {
+        role: {
+          not: 'ADMIN'
+        }
+      }
+    });
 
     const stats = {
       totalMembers,
@@ -65,14 +72,23 @@ export async function POST(request: NextRequest) {
     let sentAt: Date | null = null;
     let recipientCount = 0;
 
+    // Count only non-admin members for recipient count
+    const nonAdminMembersCount = await prisma.user.count({
+      where: {
+        role: {
+          not: 'ADMIN'
+        }
+      }
+    });
+
     if (scheduleFor === 'now') {
       status = 'SENT';
       sentAt = new Date();
-      recipientCount = await prisma.user.count();
+      recipientCount = nonAdminMembersCount;
     } else if (scheduleFor === 'later' && scheduledDate && scheduledTime) {
       status = 'SCHEDULED';
       scheduledFor = new Date(`${scheduledDate}T${scheduledTime}`);
-      recipientCount = await prisma.user.count();
+      recipientCount = nonAdminMembersCount;
     }
 
     const newsletter = await prisma.newsletter.create({
