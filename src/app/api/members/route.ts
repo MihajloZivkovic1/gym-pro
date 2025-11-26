@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
 
       // 2. Update user with proper QR code (api_base_url/members/id)
       const apiBaseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000';
-      const qrCodeUrl = `${apiBaseUrl}/members/${newUser.id}`;
+      const qrCodeUrl = `${apiBaseUrl}/member/${newUser.id}`;
 
       await tx.user.update({
         where: { id: newUser.id },
@@ -273,7 +273,7 @@ export async function POST(request: NextRequest) {
       };
 
       const emailSent = await sendWelcomeEmail(welcomeEmailData);
-
+      console.log("qr kod", result.user.qrCode);
       if (emailSent) {
         console.log(`Welcome email sent successfully to ${result.user.email}`);
       } else {

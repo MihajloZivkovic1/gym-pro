@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer';
 import { prisma } from '@/lib/prisma';
 import type { Newsletter } from '@prisma/client';
+import QRCode from 'qrcode';
+
 
 export type EmailUser = {
   id: string;
@@ -267,17 +269,28 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean>
   try {
     const htmlContent = generateWelcomeEmailTemplate(data);
 
-    const result = await transporter.sendMail({
+    const qrCodeDataUrl = await QRCode.toDataURL(data.user.qrCode, {
+      errorCorrectionLevel: 'H',
+      width: 300
+    });
+
+    const qrCodeBase64 = qrCodeDataUrl.split('base64,')[1];
+
+    await transporter.sendMail({
       from: process.env.SMTP_USER || "podelitrenutak@podelitrenutak.com",
       to: data.user.email,
       subject: "Članstvo u teretani.",
-      html: generateWelcomeEmailTemplate(data)
+      html: htmlContent,
+      attachments: [{
+        filename: `qr-code-${data.user.firstName}-${data.user.lastName}.png`,
+        content: qrCodeBase64,
+        encoding: 'base64'
+      }]
     });
 
-    console.log(`Welcome email sent successfully to ${data.user.email}`, result);
     return true;
   } catch (error) {
-    console.error(`Failed to send welcome email to ${data.user.email}:`, error);
+    console.error(error);
     return false;
   }
 }
@@ -300,149 +313,173 @@ function generateWelcomeEmailTemplate(data: WelcomeEmailData): string {
     <html>
     <head>
         <meta charset="utf-8">
-        <title>Dobrodošli u našu teretanu</title>
+        <title>Dobrodošli u teretanu</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
-    <body style="margin: 0; padding: 0; font-family: 'Arial', sans-serif; background-color: #f5f5f5;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            
-            <!-- Header -->
-            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); color: white; padding: 40px 30px; text-align: center; position: relative; overflow: hidden;">
-                <div style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; background: rgba(255,255,255,0.1); border-radius: 50%; opacity: 0.5;"></div>
-                <div style="position: absolute; bottom: -30px; left: -30px; width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 50%; opacity: 0.3;"></div>
-                
-                <div style="position: relative; z-index: 2;">
-                    <h1 style="margin: 0 0 10px 0; font-size: 32px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
-                        🎉 DOBRODOŠLI!
-                    </h1>
-                    <p style="margin: 0; font-size: 18px; opacity: 0.9; font-weight: 500;">
-                        Vaš put ka boljoj formi počinje ovde
-                    </p>
-                </div>
-            </div>
-            
-            <!-- Main Content -->
-            <div style="padding: 40px 30px;">
-                <!-- Personal Greeting -->
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h2 style="color: #059669; margin: 0 0 10px 0; font-size: 26px; font-weight: bold;">
-                        Pozdrav ${data.user.firstName}!
-                    </h2>
-                    <p style="color: #6b7280; font-size: 16px; margin: 0;">
-                        Dobrodošli u našu teretanu. Vaš nalog je kreiran i spreman je za korišćenje.
-                    </p>
-                </div>
-
-                <!-- Credentials Section -->
-                <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 25px; border-radius: 12px; border-left: 5px solid #f59e0b; margin-bottom: 30px;">
-                    <h3 style="color: #92400e; margin: 0 0 20px 0; font-size: 20px; font-weight: bold;">
-                        🔑 VAŠI PRISTUPNI PODACI
-                    </h3>
-                    <div style="background: white; padding: 20px; border-radius: 8px; margin: 15px 0;">
-                        <p style="margin: 0 0 10px 0; color: #374151; font-size: 14px; font-weight: 600;">Email (korisničko ime):</p>
-                        <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; font-weight: bold; word-break: break-all;">
-                            ${data.loginCredentials.email}
-                        </p>
-                        <p style="margin: 0 0 10px 0; color: #374151; font-size: 14px; font-weight: 600;">Privremena šifra:</p>
-                        <p style="margin: 0; color: #dc2626; font-size: 18px; font-weight: bold; letter-spacing: 1px; font-family: 'Courier New', monospace; background: #fef2f2; padding: 10px; border-radius: 6px; text-align: center;">
-                            ${data.loginCredentials.password}
-                        </p>
-                    </div>
-                    <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                        <p style="margin: 0; color: #dc2626; font-size: 13px; font-weight: 600;">
-                            ⚠️ VAŽNO: Preporučujemo vam da promenite šifru nakon prvog prijavljivanja iz bezbednosnih razloga.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Membership Info -->
-                <div style="background: #f8fafc; border: 2px solid #e2e8f0; padding: 25px; border-radius: 12px; margin-bottom: 30px;">
-                    <h3 style="color: #1e40af; margin: 0 0 20px 0; font-size: 20px; font-weight: bold;">
-                        📋 INFORMACIJE O ČLANARINI
-                    </h3>
-                    <div style="display: grid; gap: 15px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
-                            <span style="color: #6b7280; font-weight: 600;">Početak članarine:</span>
-                            <span style="color: #1f2937; font-weight: bold;">${startDateFormatted}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
-                            <span style="color: #6b7280; font-weight: 600;">Kraj članarine:</span>
-                            <span style="color: #1f2937; font-weight: bold;">${endDateFormatted}</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
-                            <span style="color: #6b7280; font-weight: 600;">Status:</span>
-                            <span style="color: #059669; font-weight: bold; background: #d1fae5; padding: 4px 12px; border-radius: 20px; font-size: 14px;">AKTIVNO</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- How to Use Section -->
-                <div style="background: linear-gradient(135deg, #eff6ff, #dbeafe); padding: 25px; border-radius: 12px; border-left: 5px solid #3b82f6; margin-bottom: 30px;">
-                    <h3 style="color: #1e40af; margin: 0 0 20px 0; font-size: 20px; font-weight: bold;">
-                        📱 KAKO KORISTITI APLIKACIJU
-                    </h3>
-                    <div style="color: #475569; font-size: 15px; line-height: 1.6;">
-                        <p style="margin: 0 0 15px 0;"><strong>1. Prijavljivanje:</strong></p>
-                        <p style="margin: 0 0 20px 0; padding-left: 20px;">Idite na <a href="${appUrl}" style="color: #3b82f6; text-decoration: none; font-weight: bold;">${appUrl}</a> i unesite vaš email i šifru.</p>
+    <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 20px 0;">
+            <tr>
+                <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                         
-                        <p style="margin: 0 0 15px 0;"><strong>2. Vaš profil:</strong></p>
-                        <p style="margin: 0 0 20px 0; padding-left: 20px;">Nakon prijave moći ćete da vidite sve informacije o vašoj članarini, datume plaćanja, status članarine i istoriju.</p>
-                        
-                        <p style="margin: 0 0 15px 0;"><strong>3. QR kod:</strong></p>
-                        <p style="margin: 0 0 20px 0; padding-left: 20px;">Vaš jedinstveni QR kod možete koristiti za brzu identifikaciju u teretani.</p>
-                        
-                        <p style="margin: 0 0 15px 0;"><strong>4. Obaveštenja:</strong></p>
-                        <p style="margin: 0; padding-left: 20px;">Automatski ćete biti obavešteni o isteku članarine, novostima i važnim informacijama.</p>
-                    </div>
-                </div>
+                        <!-- Header -->
+                        <tr>
+                            <td style="background-color: #10b981; padding: 40px 30px; text-align: center;">
+                                <h1 style="color: #ffffff; margin: 0 0 10px 0; font-size: 28px;">
+                                    Dobrodošli u teretanu!
+                                </h1>
+                                <p style="color: #ffffff; margin: 0; font-size: 16px; opacity: 0.9;">
+                                    Vaš nalog je uspešno kreiran
+                                </p>
+                            </td>
+                        </tr>
 
-                <!-- Quick Access Button -->
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="${appUrl}" style="display: inline-block; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 15px 30px; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3); transition: all 0.3s ease;">
-                        🚀 PRIJAVITE SE ODMAH
-                    </a>
-                </div>
+                        <!-- Content -->
+                        <tr>
+                            <td style="padding: 40px 30px;">
+                                
+                                <!-- Greeting -->
+                                <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                                    Poštovani/a <strong>${data.user.firstName} ${data.user.lastName}</strong>,
+                                </p>
+                                <p style="color: #666666; font-size: 15px; line-height: 1.6; margin: 0 0 30px 0;">
+                                    Vaš nalog je kreiran i možete početi da koristite našu teretanu. Ispod su vaši pristupni podaci.
+                                </p>
 
-                <!-- Support Section -->
-                <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 20px; border-radius: 10px; text-align: center;">
-                    <h4 style="color: #374151; margin: 0 0 15px 0; font-size: 18px;">Potrebna vam je pomoć?</h4>
-                    <p style="color: #6b7280; margin: 0 0 15px 0; font-size: 14px;">
-                        Naš tim je uvek spreman da vam pomogne sa bilo kojim pitanjima.
-                    </p>
-                    <p style="color: #3b82f6; font-size: 14px; margin: 0; font-weight: 600;">
-                        📞 +381 XX XXX XXXX | ✉️ info@vasateretana.rs
-                    </p>
-                </div>
-            </div>
-            
-            <!-- Footer -->
-            <div style="background: #1e293b; padding: 30px; text-align: center;">
-                <div style="margin-bottom: 20px;">
-                    <p style="color: #94a3b8; font-size: 14px; margin: 0 0 10px 0; font-weight: 600;">
-                        RADNO VREME
-                    </p>
-                    <p style="color: #cbd5e1; font-size: 13px; margin: 3px 0;">
-                        Ponedeljak - Petak: 06:00 - 23:00
-                    </p>
-                    <p style="color: #cbd5e1; font-size: 13px; margin: 3px 0;">
-                        Subota - Nedelja: 08:00 - 22:00
-                    </p>
-                </div>
-                
-                <div style="border-top: 1px solid #334155; padding-top: 20px;">
-                    <p style="color: #10b981; font-size: 16px; margin: 0 0 10px 0; font-weight: 600; font-style: italic;">
-                        "Vaš uspeh je naš uspeh!"
-                    </p>
-                    <p style="color: #64748b; font-size: 12px; margin: 0;">
-                        © ${new Date().getFullYear()} Vaša Teretana. Sva prava zadržana.
-                    </p>
-                </div>
-            </div>
-        </div>
+                                <!-- Login Credentials -->
+                                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-left: 4px solid #f59e0b; margin-bottom: 30px;">
+                                    <tr>
+                                        <td style="padding: 20px;">
+                                            <h3 style="color: #92400e; margin: 0 0 15px 0; font-size: 18px;">
+                                                Pristupni podaci
+                                            </h3>
+                                            <table width="100%" cellpadding="8" cellspacing="0" style="background-color: #ffffff; border-radius: 6px;">
+                                                <tr>
+                                                    <td style="color: #666666; font-size: 14px; padding: 12px;">Email:</td>
+                                                    <td style="color: #333333; font-size: 14px; font-weight: bold; padding: 12px;">
+                                                        ${data.loginCredentials.email}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="color: #666666; font-size: 14px; padding: 12px; border-top: 1px solid #f3f4f6;">Šifra:</td>
+                                                    <td style="color: #dc2626; font-size: 16px; font-weight: bold; padding: 12px; border-top: 1px solid #f3f4f6; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+                                                        ${data.loginCredentials.password}
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                            <p style="color: #dc2626; font-size: 13px; margin: 15px 0 0 0; font-weight: 600;">
+                                                ⚠️ Preporučujemo da promenite šifru nakon prvog prijavljivanja.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+
+                                <!-- Membership Info -->
+                                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 30px;">
+                                    <tr>
+                                        <td style="padding: 20px;">
+                                            <h3 style="color: #1e40af; margin: 0 0 15px 0; font-size: 18px;">
+                                                Članarina
+                                            </h3>
+                                            <table width="100%" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                    <td style="color: #666666; font-size: 14px; padding: 8px 0;">Početak:</td>
+                                                    <td style="color: #333333; font-size: 14px; font-weight: bold; padding: 8px 0; text-align: right;">
+                                                        ${startDateFormatted}
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="color: #666666; font-size: 14px; padding: 8px 0; border-top: 1px solid #e5e7eb;">Kraj:</td>
+                                                    <td style="color: #333333; font-size: 14px; font-weight: bold; padding: 8px 0; text-align: right; border-top: 1px solid #e5e7eb;">
+                                                        ${endDateFormatted}
+                                                    </td>
+                                                </tr>
+                                                ${data.membershipPlan ? `
+                                                <tr>
+                                                    <td style="color: #666666; font-size: 14px; padding: 8px 0; border-top: 1px solid #e5e7eb;">Plan:</td>
+                                                    <td style="color: #333333; font-size: 14px; font-weight: bold; padding: 8px 0; text-align: right; border-top: 1px solid #e5e7eb;">
+                                                        ${data.membershipPlan.name}
+                                                    </td>
+                                                </tr>
+                                                ` : ''}
+                                                <tr>
+                                                    <td colspan="2" style="padding: 8px 0; border-top: 1px solid #e5e7eb;">
+                                                        <span style="background-color: #d1fae5; color: #059669; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold;">
+                                                            ✓ AKTIVNO
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+
+                                <!-- QR Code Info -->
+                                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; margin-bottom: 30px;">
+                                    <tr>
+                                        <td style="padding: 20px; text-align: center;">
+                                            <h3 style="color: #1e40af; margin: 0 0 10px 0; font-size: 18px;">
+                                                QR Kod za ulaz
+                                            </h3>
+                                            <p style="color: #475569; font-size: 14px; margin: 0 0 15px 0;">
+                                                Vaš jedinstveni QR kod se nalazi u prilogu ovog email-a. Pokažite ga na ulazu u teretanu.
+                                            </p>
+                                            <p style="color: #64748b; font-size: 13px; margin: 0; font-style: italic;">
+                                                📎 Proverite prilog (attachment) email-a
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+
+                                <!-- Login Button -->
+                                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
+                                    <tr>
+                                        <td align="center">
+                                            <a href="${appUrl}" style="display: inline-block; background-color: #10b981; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">
+                                                Prijavite se
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </table>
+
+                                <!-- Support -->
+                                <table width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
+                                    <tr>
+                                        <td style="text-align: center;">
+                                            <p style="color: #666666; font-size: 14px; margin: 0 0 10px 0;">
+                                                Potrebna vam je pomoć?
+                                            </p>
+                                            <p style="color: #999999; font-size: 13px; margin: 0;">
+                                                Kontaktirajte nas na: <a href="mailto:info@vasateretana.rs" style="color: #10b981; text-decoration: none;">info@vasateretana.rs</a>
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+
+                            </td>
+                        </tr>
+
+                        <!-- Footer -->
+                        <tr>
+                            <td style="background-color: #1f2937; padding: 20px 30px; text-align: center;">
+                                <p style="color: #9ca3af; font-size: 13px; margin: 0 0 5px 0;">
+                                    Pon-Pet: 06:00-23:00 | Sub-Ned: 08:00-22:00
+                                </p>
+                                <p style="color: #6b7280; font-size: 12px; margin: 0;">
+                                    © ${new Date().getFullYear()} Vaša Teretana. Sva prava zadržana.
+                                </p>
+                            </td>
+                        </tr>
+
+                    </table>
+                </td>
+            </tr>
+        </table>
     </body>
     </html>
   `;
 }
+
 
 
 export async function verifyEmailConnection(): Promise<boolean> {
