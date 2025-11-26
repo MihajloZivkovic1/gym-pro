@@ -189,15 +189,19 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
                 </Button>
               )}
 
-              <Button
-                variant="danger"
-                className="w-full flex items-center gap-2"
-                onClick={handleDeleteClick}
-                disabled={isDeleting}
-              >
-                <Trash2 className="w-4 h-4" />
-                Obriši člana
-              </Button>
+              {member.activeMembership && currentUserRole !== 'MEMBER' && (
+                <Button
+                  variant="danger"
+                  className="w-full flex items-center gap-2"
+                  onClick={handleDeleteClick}
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Obriši člana
+                </Button>
+              )}
+
+
             </div>
           </div>
         </CardContent>
