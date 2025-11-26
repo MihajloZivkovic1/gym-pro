@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, CreditCard, Banknote, Building2, Calculator } from 'lucide-react';
+import { X, CreditCard, Banknote, Building2, Calculator, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -37,7 +37,16 @@ export function PaymentModal({ member, onClose, onSuccess }: PaymentModalProps) 
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [startDateOption, setStartDateOption] = useState<'from_end' | 'from_today' | 'custom'>('from_end');
+  const [customStartDate, setCustomStartDate] = useState(formatInputDate(new Date()));
 
+  // Helper function to format date for input type="date"
+  function formatInputDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 
   const isExpiredMembership = () => {
     if (!member.activeMembership) return true;
@@ -45,28 +54,34 @@ export function PaymentModal({ member, onClose, onSuccess }: PaymentModalProps) 
     return endDate < new Date();
   };
 
-  // Calculate new end date when months change
-  const calculateNewEndDate = () => {
+  // Get the start date for calculating the new end date
+  const getStartDate = (): Date => {
     if (!member.activeMembership) {
-      // If no membership at all, start from today
-      const today = new Date();
-      today.setMonth(today.getMonth() + formData.monthsPaid);
-      return formatDate(today);
+      return new Date(); // No membership, start from today
     }
 
-    const currentEnd = new Date(member.activeMembership.endDate);
+    switch (startDateOption) {
+      case 'from_end':
+        // Always extend from the membership end date, even if expired
+        return new Date(member.activeMembership.endDate);
 
-    // If membership is expired, start from today
-    if (currentEnd < new Date()) {
-      const today = new Date();
-      today.setMonth(today.getMonth() + formData.monthsPaid);
-      return formatDate(today);
-    } else {
-      // If still active, extend current end date
-      const newEnd = new Date(currentEnd);
-      newEnd.setMonth(newEnd.getMonth() + formData.monthsPaid);
-      return formatDate(newEnd);
+      case 'from_today':
+        return new Date();
+
+      case 'custom':
+        return new Date(customStartDate);
+
+      default:
+        return new Date();
     }
+  };
+
+  // Calculate new end date when months change or start date option changes
+  const calculateNewEndDate = (): string => {
+    const startDate = getStartDate();
+    const newEnd = new Date(startDate);
+    newEnd.setMonth(newEnd.getMonth() + formData.monthsPaid);
+    return formatDate(newEnd);
   };
 
   // Update amount when months change
@@ -91,6 +106,13 @@ export function PaymentModal({ member, onClose, onSuccess }: PaymentModalProps) 
       newErrors.monthsPaid = 'Broj meseci mora biti između 1 i 24';
     }
 
+    if (startDateOption === 'custom') {
+      const selectedDate = new Date(customStartDate);
+      if (isNaN(selectedDate.getTime())) {
+        newErrors.customStartDate = 'Neispravan datum';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -100,12 +122,15 @@ export function PaymentModal({ member, onClose, onSuccess }: PaymentModalProps) 
 
     setIsSubmitting(true);
 
-    console.log(member.id)
+    console.log(member.id);
     try {
       const response = await fetch(`/api/members/${member.id}/pay`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          startDate: getStartDate().toISOString()
+        })
       });
 
       const result = await response.json();
@@ -123,27 +148,6 @@ export function PaymentModal({ member, onClose, onSuccess }: PaymentModalProps) 
       setIsSubmitting(false);
     }
   };
-
-  const paymentMethods = [
-    {
-      value: 'cash' as const,
-      label: 'Gotovina',
-      icon: Banknote,
-      color: 'text-green-600'
-    },
-    {
-      value: 'card' as const,
-      label: 'Kartica',
-      icon: CreditCard,
-      color: 'text-blue-600'
-    },
-    {
-      value: 'bank_transfer' as const,
-      label: 'Prenos',
-      icon: Building2,
-      color: 'text-purple-600'
-    }
-  ];
 
   const monthOptions = [
     { value: 1, label: '1 mesec' },
@@ -191,6 +195,97 @@ export function PaymentModal({ member, onClose, onSuccess }: PaymentModalProps) 
         </div>
 
         <div className="space-y-6">
+          {/* Start Date Selection */}
+          {member.activeMembership && (
+            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="w-4 h-4 text-purple-600" />
+                <span className="font-medium text-purple-800">Produženje od datuma</span>
+              </div>
+
+              <div className="space-y-3">
+                {/* Option 1: From membership end date */}
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="startDate"
+                    value="from_end"
+                    checked={startDateOption === 'from_end'}
+                    onChange={(e) => setStartDateOption(e.target.value as 'from_end')}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">
+                      Od kraja trenutne članarine
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <span>
+                        Produžava od: {formatDate(member.activeMembership.endDate)}
+                      </span>
+                      {isExpiredMembership() && (
+                        <span className="text-orange-600 ml-1">
+                          (istekla)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </label>
+
+                {/* Option 2: From today */}
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="startDate"
+                    value="from_today"
+                    checked={startDateOption === 'from_today'}
+                    onChange={(e) => setStartDateOption(e.target.value as 'from_today')}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">
+                      Od danas
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Produžava od: {formatDate(new Date())}
+                      {!isExpiredMembership() && (
+                        <span className="text-orange-600 ml-1">
+                          (gubi se {Math.ceil((new Date(member.activeMembership.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} dana)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </label>
+
+                {/* Option 3: Custom date */}
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="startDate"
+                    value="custom"
+                    checked={startDateOption === 'custom'}
+                    onChange={(e) => setStartDateOption(e.target.value as 'custom')}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 mb-2">
+                      Customizovani datum
+                    </div>
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      disabled={startDateOption !== 'custom'}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:text-gray-500"
+                    />
+                    {errors.customStartDate && (
+                      <p className="text-red-600 text-sm mt-1">{errors.customStartDate}</p>
+                    )}
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Amount */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -213,34 +308,6 @@ export function PaymentModal({ member, onClose, onSuccess }: PaymentModalProps) 
             {errors.amount && (
               <p className="text-red-600 text-sm mt-1">{errors.amount}</p>
             )}
-          </div>
-
-          {/* Payment Method */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Način plaćanja
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              {paymentMethods.map(method => {
-                const Icon = method.icon;
-                const isSelected = formData.paymentMethod === method.value;
-
-                return (
-                  <button
-                    key={method.value}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, paymentMethod: method.value })}
-                    className={`p-4 border-2 rounded-lg flex flex-col items-center gap-2 text-sm font-medium transition-all ${isSelected
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                      }`}
-                  >
-                    <Icon className={`w-6 h-6 ${isSelected ? 'text-blue-600' : method.color}`} />
-                    {method.label}
-                  </button>
-                );
-              })}
-            </div>
           </div>
 
           {/* Months Paid */}
@@ -287,6 +354,10 @@ export function PaymentModal({ member, onClose, onSuccess }: PaymentModalProps) 
                 <div className="flex justify-between">
                   <span className="text-gray-600">Trenutno važi do:</span>
                   <span className="font-medium">{formatDate(member.activeMembership.endDate)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Produžava se od:</span>
+                  <span className="font-medium text-purple-700">{formatDate(getStartDate())}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-green-600 font-medium">Nova važi do:</span>

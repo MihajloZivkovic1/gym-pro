@@ -42,6 +42,10 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
   // Get current user's role from session
   const currentUserRole = session?.user?.role;
 
+  const editPath = session?.user?.role === 'ADMIN'
+    ? `/admin/members/${member.id}/edit`
+    : `/member/${member.id}/edit`;
+
   const getStatusBadge = (status: string) => {
     const styles = {
       active: 'bg-green-100 text-green-800',
@@ -77,7 +81,7 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          router.push('/members');
+          router.push('/admin/members');
         } else {
           alert(result.error || 'Greška pri brisanju člana');
         }
@@ -164,7 +168,9 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Akcije</h3>
 
-              <Link href={`/admin/members/${member.id}/edit`} className="block">
+
+
+              <Link href={editPath} className="block">
                 <Button className="w-full flex items-center gap-2">
                   <Edit className="w-4 h-4" />
                   Uredi podatke

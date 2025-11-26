@@ -39,7 +39,7 @@ export default function LoginForm() {
         } else if (session?.user?.role === "STAFF") {
           router.push("/staff/dashboard")
         } else {
-          router.push(`/members/${session?.user?.id}`)
+          router.push(`/member/${session?.user?.id}`)
         }
 
         router.refresh()

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { calculateMembershipStatus } from '@/lib/utils';
+import bcrypt from 'bcryptjs';
+
 
 export async function GET(
   request: NextRequest,
@@ -63,14 +65,55 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
+    // Prepare update data
+    const updateData: any = {
+      firstName: body.firstName,
+      lastName: body.lastName,
+      email: body.email,
+      phone: body.phone
+    };
+
+    // Handle password change if provided
+    if (body.newPassword) {
+      // Verify current password first
+      const user = await prisma.user.findUnique({
+        where: { id },
+        select: { password: true }
+      });
+
+      if (!user) {
+        return NextResponse.json(
+          { error: 'Korisnik nije pronađen' },
+          { status: 404 }
+        );
+      }
+
+      if (!user.password) {
+        return NextResponse.json(
+          { error: 'Korisnik nema postavljenu lozinku' },
+          { status: 400 }
+        );
+      }
+
+      // Verify current password
+      const isPasswordValid = await bcrypt.compare(body.currentPassword, user.password);
+
+      if (!isPasswordValid) {
+        return NextResponse.json(
+          { error: 'Trenutna lozinka je netačna' },
+          { status: 400 }
+        );
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(body.newPassword, 10);
+      updateData.password = hashedPassword;
+    }
+
+    // Update user
     const updatedMember = await prisma.user.update({
       where: { id },
-      data: {
-        firstName: body.firstName,
-        lastName: body.lastName,
-        email: body.email,
-        phone: body.phone
-      },
+      data: updateData,
       include: {
         memberships: {
           where: { status: 'ACTIVE' },
@@ -82,7 +125,9 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      message: 'Član je uspešno ažuriran',
+      message: body.newPassword
+        ? 'Član i lozinka su uspešno ažurirani'
+        : 'Član je uspešno ažuriran',
       data: updatedMember
     });
   } catch (error) {

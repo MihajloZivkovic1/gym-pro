@@ -7,7 +7,8 @@ const paymentSchema = z.object({
   paymentMethod: z.enum(['cash', 'card', 'bank_transfer']),
   monthsPaid: z.number().min(1).max(24, 'Broj meseci mora biti između 1 i 24'),
   notes: z.string().optional(),
-  processedBy: z.string().default('admin')
+  processedBy: z.string().default('admin'),
+  startDate: z.string().optional() // Date from which to extend membership
 });
 const uuidSchema = z.string().uuid('Nevažeći ID korisnika');
 
@@ -60,14 +61,24 @@ export async function POST(
       });
 
       // Calculate new end date
-      let newEndDate = new Date(activeMembership.endDate);
-      const today = new Date();
+      // Use the startDate from frontend if provided, otherwise default to membership end date
+      let newEndDate: Date;
 
-      // If membership is expired, start from today
-      if (newEndDate < today) {
-        newEndDate = new Date(today);
+      if (validatedData.startDate) {
+        // Frontend has chosen a specific start date
+        newEndDate = new Date(validatedData.startDate);
+      } else {
+        // Fallback: use membership end date or today if expired
+        newEndDate = new Date(activeMembership.endDate);
+        const today = new Date();
+
+        // If membership is expired, start from today
+        if (newEndDate < today) {
+          newEndDate = new Date(today);
+        }
       }
 
+      // Add the months paid to the start date
       newEndDate.setMonth(newEndDate.getMonth() + validatedData.monthsPaid);
 
       // Calculate next payment due date (1 month after new end date)
