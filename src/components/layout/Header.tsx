@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, BarChart3, Bell, Menu, X, Newspaper, BadgeCheck } from 'lucide-react';
+import { Users, BarChart3, Menu, X, Newspaper, BadgeCheck } from 'lucide-react';
 import { useState } from 'react';
 import Image from 'next/image'
 export function Header() {
@@ -13,7 +13,7 @@ export function Header() {
     { name: 'Dashboard', href: '/admin', icon: BarChart3 },
     { name: 'Članovi', href: '/admin/members', icon: Users },
     { name: 'Obavestenja', href: '/admin/newsletters', icon: Newspaper },
-    { name: 'Planovi Članarine', href: '/admin/membership-plans', icon: BadgeCheck },
+    { name: 'Članarine', href: '/admin/membership-plans', icon: BadgeCheck },
   ];
 
   const toggleMobileMenu = () => {
@@ -49,8 +49,8 @@ export function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isActive
-                    ? 'bg-blue-600 text-white'
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${isActive
+                    ? 'bg-gradient-to-r from-orange-50 to-orange-100 text-orange-600 border-b-2 border-orange-600'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     }`}
                 >
@@ -61,20 +61,9 @@ export function Header() {
             })}
           </nav>
 
-          {/* Desktop User menu */}
-          <div className="hidden md:flex items-center gap-4">
-            <Bell className="w-6 h-6 text-gray-600 hover:text-gray-900 cursor-pointer" />
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">A</span>
-            </div>
-          </div>
 
           {/* Mobile menu button and user avatar */}
           <div className="md:hidden flex items-center gap-3">
-            <Bell className="w-6 h-6 text-gray-600 hover:text-gray-900 cursor-pointer" />
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">A</span>
-            </div>
             <button
               onClick={toggleMobileMenu}
               className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
@@ -102,8 +91,8 @@ export function Header() {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-base font-medium transition-colors ${isActive
-                      ? 'bg-blue-600 text-white'
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${isActive
+                      ? 'bg-gradient-to-r from-orange-50 to-orange-100 text-orange-600 border-b-2 border-orange-600'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                       }`}
                     onClick={() => setIsMobileMenuOpen(false)}

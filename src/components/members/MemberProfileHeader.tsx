@@ -107,11 +107,10 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
     <>
       <div className="flex items-center gap-4 mb-6">
         {currentUserRole !== "MEMBER" && (
-          <Link href="/admin/members">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          </Link>
+          <Button variant="ghost" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+
         )}
 
         <h1 className="text-3xl font-bold text-gray-900">

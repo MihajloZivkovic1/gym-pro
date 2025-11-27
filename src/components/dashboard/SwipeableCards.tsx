@@ -153,7 +153,11 @@ export function SwipeableCards({ expiringMemberships, expiredMemberships }: Swip
                     </div>
                   </div>
                   <Link href={`/admin/members/${membership.user.id}`}>
-                    <Button size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-amber-500 hover:bg-amber-600 text-white">
+                    <Button
+                      size="sm"
+                      variant='ghost'
+                      className="border-red-500 text-red-600 hover:bg-red-50 hover:border-red-600"
+                    >
                       Pogledaj
                     </Button>
                   </Link>
@@ -230,7 +234,11 @@ export function SwipeableCards({ expiringMemberships, expiredMemberships }: Swip
                     </div>
                   </div>
                   <Link href={`/admin/members/${membership.user.id}`}>
-                    <Button size="sm" variant="primary" className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 border-red-200 text-red-600 hover:bg-red-50">
+                    <Button
+                      variant='ghost'
+                      size="sm"
+                      className="border-red-500 text-red-600 hover:bg-red-50 hover:border-red-600"
+                    >
                       Obnovi
                     </Button>
                   </Link>
