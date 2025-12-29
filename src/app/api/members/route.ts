@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
       });
 
       // 2. Update user with proper QR code (api_base_url/members/id)
-      const apiBaseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000';
+      const apiBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
       const qrCodeUrl = `${apiBaseUrl}/member/${newUser.id}`;
 
       await tx.user.update({
