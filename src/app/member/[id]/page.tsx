@@ -1,10 +1,12 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { calculateMembershipStatus } from '@/lib/utils';
 import { MemberProfileHeader } from '@/components/members/MemberProfileHeader';
 import { MembershipStatus } from '@/components/members/MembershipStatus';
 import { MembershipHistory } from '@/components/members/MembershipHistory';
 import { PaymentHistory } from '@/components/members/PaymentHistory';
+import { authOptions } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
 
 async function getMemberData(id: string) {
   try {
@@ -141,14 +143,24 @@ interface PageProps {
 export default async function MemberProfilePage({ params }: PageProps) {
   const { id } = await params;
   const data = await getMemberData(id);
+  const session = await getServerSession(authOptions);
 
+  if (!session?.user) {
+    redirect('/auth/login');
+  }
+
+
+  const currentUserId = session.user.id;
+  const currentUserRole = session.user.role;
+
+  if (currentUserRole !== 'ADMIN' && currentUserId !== id) {
+    redirect('/unauthorized'); // or redirect('/member/' + currentUserId)
+  }
   if (!data) {
     notFound();
   }
-
   const { member, memberships, payments, notifications } = data;
 
-  console.log(member);
   return (
     <div className="space-y-6">
       {/* Member Header */}

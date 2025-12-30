@@ -41,10 +41,15 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
 
   // Get current user's role from session
   const currentUserRole = session?.user?.role;
+  const currentUserId = session?.user?.id;
 
-  const editPath = session?.user?.role === 'ADMIN'
+  const canEdit = currentUserRole === 'ADMIN' || currentUserId === member.id;
+  const isAdmin = currentUserRole === 'ADMIN';
+
+  const editPath = currentUserRole === 'ADMIN'
     ? `/admin/members/${member.id}/edit`
     : `/member/${member.id}/edit`;
+
 
   const getStatusBadge = (status: string) => {
     const styles = {
@@ -169,15 +174,17 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
 
 
 
-              <Link href={editPath} className="block">
-                <Button className="w-full flex items-center gap-2">
-                  <Edit className="w-4 h-4" />
-                  Uredi podatke
-                </Button>
-              </Link>
+              {canEdit && (
+                <Link href={editPath} className="block">
+                  <Button className="w-full flex items-center gap-2">
+                    <Edit className="w-4 h-4" />
+                    Uredi podatke
+                  </Button>
+                </Link>
+              )}
 
               {/* FIXED: Check current user's role, not the member being viewed */}
-              {member.activeMembership && currentUserRole !== 'MEMBER' && (
+              {member.activeMembership && isAdmin && (
                 <Button
                   onClick={() => setShowPaymentModal(true)}
                   variant="secondary"
@@ -188,7 +195,7 @@ export function MemberProfileHeader({ member }: MemberProfileHeaderProps) {
                 </Button>
               )}
 
-              {member.activeMembership && currentUserRole !== 'MEMBER' && (
+              {isAdmin && (
                 <Button
                   variant="danger"
                   className="w-full flex items-center gap-2"
