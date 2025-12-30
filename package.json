@@ -13,7 +13,6 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
     "@prisma/client": "^6.15.0",
-    "@types/nodemailer": "^7.0.1",
     "@types/qrcode": "^1.5.6",
     "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
@@ -21,12 +20,12 @@
     "lucide-react": "^0.543.0",
     "next": "15.5.9",
     "next-auth": "^4.24.11",
-    "nodemailer": "^6.9.13",
     "prisma": "^6.15.0",
     "qrcode": "^1.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.62.0",
+    "resend": "^6.6.0",
     "xlsx": "^0.18.5",
     "zod": "^4.1.5"
   },
