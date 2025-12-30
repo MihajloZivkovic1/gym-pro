@@ -37,7 +37,7 @@ export type WelcomeEmailData = {
 
 export async function sendNewsletterEmails(newsletterId: string): Promise<void> {
   try {
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    const sendTest = process.env.SEND_TEST === 'sendTest';
 
     // Fetch users
     const users = await prisma.user.findMany({
@@ -62,7 +62,7 @@ export async function sendNewsletterEmails(newsletterId: string): Promise<void> 
     console.log(`Sending newsletter "${newsletter.title}" to ${users.length} recipients`);
 
     // IN DEVELOPMENT: Only send to YOUR verified Resend email
-    if (isDevelopment) {
+    if (sendTest) {
       const testEmail = process.env.RESEND_TEST_EMAIL; // Your Resend account email
 
       if (!testEmail) {
