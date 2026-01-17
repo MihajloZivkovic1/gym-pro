@@ -394,6 +394,46 @@ function generateWelcomeEmailTemplate(data: WelcomeEmailData): string {
                                     </tr>
                                 </table>
 
+                                <!-- PWA Installation Guide -->
+                                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; margin-bottom: 30px;">
+                                    <tr>
+                                        <td style="padding: 20px;">
+                                            <h3 style="color: #166534; margin: 0 0 15px 0; font-size: 18px;">
+                                                📱 Instalirajte aplikaciju na telefon
+                                            </h3>
+                                            <p style="color: #475569; font-size: 14px; margin: 0 0 20px 0;">
+                                                Preuzmite našu aplikaciju direktno na vaš telefon za brži pristup:
+                                            </p>
+                                            
+                                            <!-- Safari Instructions -->
+                                            <div style="margin-bottom: 20px;">
+                                                <p style="color: #166534; font-size: 15px; font-weight: bold; margin: 0 0 10px 0;">
+                                                    Za iPhone (Safari):
+                                                </p>
+                                                <ol style="color: #475569; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                                                    <li>Otvorite ${appUrl} u Safari pretraživaču</li>
+                                                    <li>Kliknite na dugme "Podeli" (kvadrat sa strelicom)</li>
+                                                    <li>Skrolujte dole i izaberite "Add to Home Screen"</li>
+                                                    <li>Kliknite "Add" u gornjem desnom uglu</li>
+                                                </ol>
+                                            </div>
+
+                                            <!-- Chrome Instructions -->
+                                            <div>
+                                                <p style="color: #166534; font-size: 15px; font-weight: bold; margin: 0 0 10px 0;">
+                                                    Za Android (Chrome):
+                                                </p>
+                                                <ol style="color: #475569; font-size: 14px; margin: 0; padding-left: 20px; line-height: 1.8;">
+                                                    <li>Otvorite ${appUrl} u Chrome pretraživaču</li>
+                                                    <li>Kliknite na tri tačke (⋮) u gornjem desnom uglu</li>
+                                                    <li>Izaberite "Install app" ili "Add to Home screen"</li>
+                                                    <li>Potvrdite instalaciju</li>
+                                                </ol>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+
                                 <!-- Login Button -->
                                 <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
                                     <tr>
@@ -413,7 +453,7 @@ function generateWelcomeEmailTemplate(data: WelcomeEmailData): string {
                                                 Potrebna vam je pomoć?
                                             </p>
                                             <p style="color: #999999; font-size: 13px; margin: 0;">
-                                                Kontaktirajte nas na: <a href="mailto:info@vasateretana.rs" style="color: #10b981; text-decoration: none;">info@vasateretana.rs</a>
+                                                Kontaktirajte nas na: <a href="tel:+381638045147" style="color: #10b981; text-decoration: none; font-weight: bold;">063 804 51 47</a>
                                             </p>
                                         </td>
                                     </tr>
