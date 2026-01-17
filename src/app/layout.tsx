@@ -10,7 +10,7 @@ import { authOptions } from "@/lib/auth";
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'GymPro - Gym Management System',
+  title: 'SkyFit - Gym Management System',
   description: 'Professional gym management system for tracking memberships and payments',
 };
 
