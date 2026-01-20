@@ -203,8 +203,7 @@ ${newsletter.message}
             <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
                 <p style="font-size: 14px; color: #6b7280; line-height: 1.5; margin: 0 0 10px 0;">
                     <strong>Kontakt:</strong><br>
-                    📞 +381 XX XXX XXXX<br>
-                    ✉️ info@vasateretana.rs
+                    📞 063 804 51 47<br>
                 </p>
                 
                 <p style="font-size: 14px; color: #6b7280; line-height: 1.5; margin: 0;">
