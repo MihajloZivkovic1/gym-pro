@@ -26,7 +26,7 @@ export default async function RootLayout({
     <html lang="sr">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#10b981" />
+        <meta name="theme-color" content="#0f172a" />
         <meta name="description" content="Sistem za upravljanje članovima teretane" />
 
         {/* PWA Manifest */}
