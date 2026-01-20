@@ -69,28 +69,22 @@ export const authOptions: NextAuthOptions = {
             where: { email: profile.email }
           })
 
+          // Block login if no account exists
           if (!existingUser) {
-            const newUser = await prisma.user.create({
-              data: {
-                email: profile.email,
-                firstName: profile.name?.split(' ')[0] || 'User',
-                lastName: profile.name?.split(' ').slice(1).join(' ') || '',
-                role: UserRole.MEMBER,
-                isActive: true,
-                qrCode: `google-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              }
-            })
-
-            user.id = newUser.id
-            user.role = newUser.role
-          } else {
-            user.id = existingUser.id
-            user.role = existingUser.role
-
-            if (!existingUser.isActive) {
-              return false
-            }
+            console.log(`Login blocked: No account found for ${profile.email}`)
+            return false // This prevents the sign-in
           }
+
+          // Block if account is deactivated
+          if (!existingUser.isActive) {
+            console.log(`Login blocked: Account deactivated for ${profile.email}`)
+            return false
+          }
+
+          // Allow login and attach user data
+          user.id = existingUser.id
+          user.role = existingUser.role
+
         } catch (error) {
           console.error("Google sign-in error:", error)
           return false
