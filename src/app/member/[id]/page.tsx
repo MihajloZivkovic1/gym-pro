@@ -57,6 +57,7 @@ async function getMemberData(id: string) {
       phone: member.phone || undefined, // Convert null to undefined
       createdAt: member.createdAt,
       membershipStatus,
+      qrCode: member.qrCode || undefined,
       activeMembership: activeMembership ? {
         id: activeMembership.id,
         startDate: activeMembership.startDate,
