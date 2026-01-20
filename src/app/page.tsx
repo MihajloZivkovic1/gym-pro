@@ -40,7 +40,7 @@ export default function GymLandingPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Dumbbell className="w-8 h-8 text-orange-500" />
-            <span className="text-2xl font-bold text-white">Sky Fitness</span>
+            <span className="text-2xl font-bold text-white">Sky Fit</span>
           </div>
           <button
             onClick={handleLogin}
@@ -78,7 +78,7 @@ export default function GymLandingPage() {
       {/* Footer */}
       <footer className="container mx-auto px-6 py-8 mt-20 border-t border-slate-800">
         <div className="text-center text-slate-500">
-          <p>&copy; 2025 Sky Fitness. Internal Use Only.</p>
+          <p>&copy; 2026 Sky Fit. Internal Use Only.</p>
         </div>
       </footer>
     </div>
